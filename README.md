@@ -163,13 +163,17 @@ of using it.
    `PLQ-LF` formula, because that precision was required for the portal
    routing to close.
 
-3. **Lung is treated as a "plain" generic tissue.** The real source gives
-   Lung its own distinct pass-through compartment between Central and every
-   other organ (true right-heart → lung → left-heart circulation topology,
-   with its own vascular equation, lines 389–395 of the source). This
-   repository instead lets Lung exchange directly with Central like Bone or
-   Muscle. Identified while reading the source; deliberately deferred rather
-   than fixed, since it wasn't the target of any step so far.
+3. **Lung is treated as a generic tissue rather than a distinct arterial
+   pass-through.** The source routes every tissue's arterial supply through
+   a separate Lung vascular compartment (Central → Lung → tissues), whereas
+   this model feeds tissues from central plasma directly. This
+   simplification was measured, not assumed: at steady state, Lung's
+   vascular concentration differs from central plasma by 0.01% (ratio
+   0.9999), because Lung carries the entire cardiac output and its lymph
+   filtering is negligible against that flow. The simplification therefore
+   changes tissue biodistribution coefficients by ~0.01% — far below the
+   model's validation precision — and was retained deliberately rather than
+   rebuilt.
 
 4. **The `PLQ[Other]` discrepancy is unresolved by design** (see
    [Diagnostic highlights](#diagnostic-highlights)) — this model uses the
