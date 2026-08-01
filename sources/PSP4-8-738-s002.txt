@@ -1,0 +1,1022 @@
+METHOD Stiff
+DTMIN = 1e-9
+
+STARTTIME = 0
+STOPTIME = 1000 ;; [hrs] 
+
+;;=====================================================================================  
+;; ----------------------------- INITIALIZATION  --------------------------------------
+;;=====================================================================================
+
+    INIT C_EXG_Plasma =  Dose_in_mgkg*BW/(V_Plasma*1000)/MW_EDG*1E6 ;; [uM]
+    INIT C_EDG_Plasma =  EDG_mg_ml/MW_EDG*1E6 ;; [uM]
+
+    INIT AUC_free_mAb =  0 ;;
+    
+    INIT C_EDG_LN = 1E-18*1E6 ;; [uM]
+    INIT C_EDG[1..N_Organs, 1..N_Organ_Loc] =  1E-18*1E6 ;; [uM]
+    
+    INIT C_EXG_LN = 1E-18*1E6 ;; [uM]
+    INIT C_EXG[1..1,1..N_Organs, 1..N_mAb_Location] =  1E-18*1E6 ;; [uM]
+    
+    INIT C_FcRn_E6a[1..N_Organs] =  FcRn_Conc 
+    INIT C_FcRn_E7b[1..N_Organs] =  FcRn_Conc 
+    INIT C_FcRn_E7[1..N_Organs]  =  FcRn_Conc      
+    INIT C_FcRn_ISM[1..N_Organs] =  FcRn_Conc*1E-4 
+    INIT C_FcRn_VM[1..N_Organs]  =  FcRn_Conc*1E-4  
+        
+    ;; Amount for SC injection 
+    INIT SC_inj_site_amt = 0 ;; [umol]
+
+;;=====================================================================================
+;; ---------------------------------- INPUTS ------------------------------------------
+;;=====================================================================================
+
+    Dose_in_mgkg = 5 ;; [mg/kg]
+
+    ka = 0.26/24 ;; SC absorption rate, 1/hr 
+    F = 0.60 ;; SC bioavailability
+
+    PS_Score = 0			;;; Measured polyspecificity score (from AC-SINS) 
+
+    EDG_mg_ml = 10  ;; [mg/mL]
+
+    BW  = 71 ;; [kg]. For human simulations ;; 28g for Mouse, 280g for Rat, 6.2kg for Rhesus Monkey, and 71kg for Human
+ 
+;;=====================================================================================
+;; -------------------------------- PARAMETERS ----------------------------------------
+;;=====================================================================================
+
+    KD6_WT =  700    ;; [nM]  
+    KD7_WT =  154077 ;; [nM]  
+
+    KD_6_EXG = KD6_WT ;;  ;; [nM]. 
+    KD_7_EXG = KD7_WT ;;   ;; [nM]. 
+
+    kint_PS = 0.0380 ;;; [1/h]. Internalization rate for polyspecificity-membrane bound mAb
+	
+    PS_b = 0.2624 ;; [-]
+	
+    PS_a = 1.8051 ;; [-]
+
+    
+;; Organ indices (allows arrays to be indexed by meaningful names)
+    Lung = 1
+    Liver = 2
+    Heart = 3
+    Muscle = 4
+    Skin = 5
+    Adipose = 6
+    Bone = 7
+    Brain = 8
+    Kidney = 9
+    SI = 10
+    LI = 11
+    Pancreas = 12
+    Thymus = 13
+    Spleen = 14
+    Other = 15
+    
+;; mAb_Location indices (allows arrays to be indexed by meaningful names)
+    V = 1
+    VM = 2
+    E7 = 3
+    E6a = 4
+    E7b = 5
+    ISM = 6
+    IntS = 7
+    Bound_VM = 8
+    Bound_E7 = 9
+    Bound_E6a = 10
+    Bound_E7b = 11
+    Bound_ISM = 12
+    Bound2_VM = 13
+    Bound2_E7 = 14
+    Bound2_E6a = 15
+    Bound2_E7b = 16
+    Bound2_ISM = 17
+    Bound_VM_mem = 18
+    Bound_ISM_mem = 19
+    
+;; FcRn_Loc
+    FcRn_VM = 1
+    FcRn_E7 = 2
+    FcRn_E6a = 3
+    FcRn_E7b = 4
+    FcRn_ISM = 5
+    
+;; Other_Loc
+    EDG_Plasma = 1
+
+    MW_EDG = 150000
+
+    N_Organs       = 15
+    N_Organ_Loc    = 17
+    N_mAb_Location = 19
+        
+    AVOGADRO  = 6.02E23
+
+    total_FcRn_in_nmole_par = 1022 ;; [nmol]. 1022 for human
+        
+    k_on_PS = 8.06E+07/1E6 ;;  [1/(uM*h)]
+
+    C_mem = 18.5 ;; [uM] 
+    
+    Total_Endothelial_Cell = 1.422e+009 ;; [number]. Total number of endothelial cells in mouse
+
+    on_rate_ratio_1st_vs_2nd_binding = 83.7 ;; [-]
+
+    mouse_endo_scale_factor = 1   ;; scales number of endothelial cells to value for mouse
+    human_endo_scale_factor = 603.7 ;; scales number of endothelial cells to value for human 
+    
+    Scale_Factor = human_endo_scale_factor ;; To simulate human
+
+    CL_Up_in_nL_per_hour_per_million_cells = 150 ;; [nL/h/(1E6 cells)]
+	
+    Pino_time = 10.8/60 ;; [h]
+
+    FcRn_recycle_fraction = 0.99 ;; [-]
+
+    FR    = 0.715 ;; [-]
+
+    sigma_V[1] = 0.95 ;; [-]
+    sigma_V[2] = 0.85
+    sigma_V[3] = 0.95
+    sigma_V[4] = 0.95
+    sigma_V[5] = 0.95
+    sigma_V[6] = 0.95
+    sigma_V[7] = 0.85
+    sigma_V[8] = 0.99
+    sigma_V[9] = 0.9
+    sigma_V[10] = 0.9
+    sigma_V[11] = 0.95
+    sigma_V[12] = 0.9
+    sigma_V[13] = 0.9
+    sigma_V[14] = 0.85
+    sigma_V[15] = 0.95
+            
+    sigma_IS[1..N_Organs] = 0.2 ;; [-]
+
+    FcRn_Availability  = 1.0 ;; [-] The fraction of FcRn available for IgG recycling
+
+    Prob_deg = 0.95 ;; [-] ~ 95% of free mAb inside endosome will be routed to be degraded
+
+    kdeg_FcRn_Ab = LOGN(2)/11.1 ;; [1/h]
+  
+    ;;; IgG related parameters
+    
+    ;;; kon for EXG    
+    k_on_6_EXG  = 8.06E+07/1E6  ;; [1/(uM*h)]
+    k_on_7_EXG  = 1.61E+07/5/1E6  ;; [1/(uM*h)]
+    
+    ;;; kon for EDG    
+    k_on_6_EDG  = 8.06E+07/1E6 ;; [1/(uM*h)]
+    k_on_7_EDG  = 1.61E+07/5/1E6 ;; [1/(uM*h)]
+
+    
+    Endosome_radius = 0.1*2 ;; [um]
+    Endosome_per_cell = 20000/8 ;; [number]  
+    
+    tau_VM = 1/60  ;; [h]  
+    tau_ISM = 1/60 ;; [h]
+
+    E6a_Vol_Pct = 0.33 ;; [-]
+    E7b_Vol_Pct = (1-E6a_Vol_Pct)/2 ;; [-]
+    E7_Vol_Pct = (1-E6a_Vol_Pct)/2 ;; [-]         
+
+    K_on_6_EDG2  = K_on_6_EDG/on_rate_ratio_1st_vs_2nd_binding ;; [1/(uM*h)] 
+    K_on_7_EDG2  = K_on_7_EDG/on_rate_ratio_1st_vs_2nd_binding ;; [1/(uM*h)]
+    K_on_6_EXG2  = K_on_6_EXG/on_rate_ratio_1st_vs_2nd_binding ;; [1/(uM*h)]
+    K_on_7_EXG2  = K_on_7_EXG/on_rate_ratio_1st_vs_2nd_binding ;; [1/(uM*h)]
+
+    KD_6_EDG2  = KD_6_EDG*on_rate_ratio_1st_vs_2nd_binding ;; [nM] 
+    KD_7_EDG2  = KD_7_EDG*on_rate_ratio_1st_vs_2nd_binding ;; [nM] 
+   
+    KD_6_EXG2 = on_rate_ratio_1st_vs_2nd_binding*KD6_WT ;; [nM]
+    KD_7_EXG2 = on_rate_ratio_1st_vs_2nd_binding*KD7_WT ;; [nM]
+
+    K_off_7_EDG = (KD_7_EDG/1000)*K_on_7_EDG ;; [1/h]
+    K_off_6_EDG = (KD_6_EDG/1000)*K_on_6_EDG ;; [1/h] 
+    K_off_7_EXG = (KD_7_EXG/1000)*K_on_7_EXG ;; [1/h] 
+    K_off_6_EXG = (KD_6_EXG/1000)*K_on_6_EXG ;; [1/h] 
+    
+    K_off_7_EDG2 = (KD_7_EDG2/1000)*K_on_7_EDG2 ;; [1/h] 
+    K_off_6_EDG2 = (KD_6_EDG2/1000)*K_on_6_EDG2 ;; [1/h] 
+    K_off_7_EXG2 = (KD_7_EXG2/1000)*K_on_7_EXG2 ;; [1/h] 
+    K_off_6_EXG2 = (KD_6_EXG2/1000)*K_on_6_EXG2 ;; [1/h] 
+
+    L_LymphNode = (ARRAYSUM(LF[*])) ;; [L/h]
+
+    
+    KD_6_EDG = 700    ;; [nM]   
+    KD_7_EDG = 154077 ;; [nM]
+    
+    total_FcRn_in_nmole  = total_FcRn_in_nmole_par ;; [nmole]. The total amount of FcRn
+
+	;; values for human 
+    Endothelial_Cell_Frac[1] = 0.0834
+    Endothelial_Cell_Frac[2] = 0.1877
+    Endothelial_Cell_Frac[3] = 0.0011
+    Endothelial_Cell_Frac[4] = 0.1928
+    Endothelial_Cell_Frac[5] = 0.0819
+    Endothelial_Cell_Frac[6] = 0.0999
+    Endothelial_Cell_Frac[7] = 0.1478
+    Endothelial_Cell_Frac[8] = 0.0115
+    Endothelial_Cell_Frac[9] = 0.0157
+    Endothelial_Cell_Frac[10] = 0.0121
+    Endothelial_Cell_Frac[11] = 0.0209
+    Endothelial_Cell_Frac[12] = 0.0001
+    Endothelial_Cell_Frac[13] = 0.0001
+    Endothelial_Cell_Frac[14] = 0.0499
+    Endothelial_Cell_Frac[15] = 0.0951
+    
+    ;;; The parameters from Shah & Betts model
+
+    V_V[1] = 55/1000 ;; [L]
+    V_V[2] = 183/1000
+    V_V[3] = 13.1/1000
+    V_V[4] = 662/1000
+    V_V[5] = 127/1000
+    V_V[6] = 148/1000
+    V_V[7] = 224/1000
+    V_V[8] = 31.9/1000
+    V_V[9] = 18.2/1000
+    V_V[10] = 6.15/1000
+    V_V[11] = 8.74/1000
+    V_V[12] = 5.7/1000
+    V_V[13] = 0.353/1000
+    V_V[14] = 26.8/1000
+    V_V[15] = 204/1000
+
+    V_IntS[1] = 300/1000 ;; [L]
+    V_IntS[2] = 429/1000
+    V_IntS[3] = 48.8/1000
+    V_IntS[4] = 3910/1000
+    V_IntS[5] = 1125/1000
+    V_IntS[6] = 2289/1000
+    V_IntS[7] = 1891/1000
+    V_IntS[8] = 261/1000
+    V_IntS[9] = 49.8/1000
+    V_IntS[10] = 67.1/1000
+    V_IntS[11] = 95.3/1000
+    V_IntS[12] = 18/1000
+    V_IntS[13] = 1.09/1000
+    V_IntS[14] = 44.3/1000
+    V_IntS[15] = 831/1000
+
+    V_C[1] = 595/1000 ;; [L]
+    V_C[2] = 1371/1000
+    V_C[3] = 267/1000
+    V_C[4] = 24815/1000
+    V_C[5] = 2035/1000
+    V_C[6] = 10840/1000
+    V_C[7] = 7817/1000
+    V_C[8] = 1124/1000
+    V_C[9] = 247/1000
+    V_C[10] = 305/1000
+    V_C[11] = 434/1000
+    V_C[12] = 74.7/1000
+    V_C[13] = 4.65/1000
+    V_C[14] = 127/1000
+    V_C[15] = 3626/1000
+	
+    V_Organ[Lung] = 1000/1000 ;; [L]
+    V_Organ[Liver] = 2143/1000
+    V_Organ[Heart] = 341/1000
+    V_Organ[Muscle] = 30078/1000
+    V_Organ[Skin] = 3408/1000
+    V_Organ[Adipose] = 13465/1000
+    V_Organ[Bone] = 10165/1000
+    V_Organ[Brain] = 1450/1000
+    V_Organ[Kidney] = 332/1000
+    V_Organ[SI] = 385/1000
+    V_Organ[LI] = 548/1000
+    V_Organ[Pancreas] = 104/1000
+    V_Organ[Thymus] = 6.41/1000
+    V_Organ[Spleen] = 221/1000
+    V_Organ[Other] = 4852/1000
+
+	
+    V_Plasma = 3.126 ;; [L]. value for human
+    V_LN     = 0.274 ;; [L]. value for human
+
+    ;; value for human. PLQ & LF are in the unit of [L/h]
+
+    PLQ[1] = 181913/1000 ;; [L/h]
+    PLQ[2] = 13210/1000
+    PLQ[3] = 7752/1000
+    PLQ[4] = 33469/1000
+    PLQ[5] = 11626/1000
+    PLQ[6] = 11233/1000
+    PLQ[7] = 2591/1000
+    PLQ[8] = 21453/1000
+    PLQ[9] = 36402/1000
+    PLQ[10] = 12368/1000
+    PLQ[11] = 12867/1000
+    PLQ[12] = 3056/1000
+    PLQ[13] = 353/1000
+    PLQ[14] = 6343/1000
+    PLQ[15] = 9190/1000            
+
+    LF[Lung]     = PLQ[Lung]*0.002 ;; [L/h]
+    LF[LIVER]    = (PLQ[Liver] + PLQ[SI]-LF[SI] + PLQ[LI]-LF[LI] + PLQ[Spleen]-LF[Spleen] + PLQ[Pancreas] - LF[Pancreas])*0.002;; 
+    LF[HEART]    = PLQ[HEART]*0.002;;
+    LF[Muscle]   = PLQ[Muscle]*0.002;;
+    LF[Skin]     = PLQ[Skin]*0.002;;
+    LF[Adipose]  = PLQ[Adipose]*0.002;;
+    LF[Bone]     = PLQ[Bone]*0.002;;
+    LF[Brain]    = PLQ[Brain]*0.002;;
+    LF[Kidney]   = PLQ[Kidney]*0.002;;
+    LF[SI]       = PLQ[SI]*0.002;;
+    LF[LI]       = PLQ[LI]*0.002;;
+    LF[Pancreas] = PLQ[Pancreas]*0.002;;
+    LF[Thymus]   = PLQ[Thymus]*0.002;;
+    LF[Spleen]   = PLQ[Spleen]*0.002;;
+    LF[Other]    = PLQ[Other]*0.002;;
+
+;;===================================================================================== 
+;; ---------------------- DIFFERENTIAL VARIABLES/EQUATIONS ----------------------------
+;;=====================================================================================
+
+    k_off_PS = (PS_Kd/1000)*k_on_PS ;; [1/h]
+
+	d/dt(C_EXG_Plasma) = (w_other_1_EXG_Plasma + ka*SC_inj_site_amt)/V_plasma; 
+    d/dt(SC_inj_site_amt) = -ka*SC_inj_site_amt ;   
+    
+	C_EXG_Plasma_nM = 1e3*C_EXG_Plasma ; ;; 1e3 is to change from molar units to micromolar units 
+    C_EXG_Plasma_uM = 1*C_EXG_Plasma ;
+    C_EXG_Plasma_total    = C_EXG_Plasma     ;
+    C_EXG_Plasma_total_nM = C_EXG_Plasma_nM  ;
+    C_EXG_Plasma_total_uM = C_EXG_Plasma_uM  ;
+
+	C_EXG_Total[1..N_Organs, 1..N_mAb_Location] =  C_EXG[1,i,j]  ;        
+
+;; ==============================================================================================
+;; Exogenous IgG 
+    
+    ;; All organs except lung and liver at vascular cmpt (below), exogenous and endogenous IgG, free only
+
+      ;; vascular space EXG
+      d/dt(C_EXG[1..1,3..N_Organs,V]) = (PLQ[j]*C_EXG[i, Lung,V]  ;; from Lung 
+        - (PLQ[j]- LF[j])*C_EXG[i,j,V]  ;; leave to Main Plasma
+        - (1-sigma_V[j])*LF[j]*C_EXG[i,j,V] ;; going via Lymph to Interstitial 
+        - CL_up[j]*FR*C_EXG[i,j,V] ;; pinocytosis from vascular to vascular membrane
+        + CL_Up[j]*FR*C_EXG[i,j,VM] ;; exocytosis from vascular membrane to vascular space 
+        )/V_v[j]; 
+      
+      ;; vascular space EDG
+      d/dt(C_EDG[3..N_Organs,V]) = (PLQ[i]*C_EDG[Lung,V] ;; from Main Plasma 
+        -(PLQ[i]- LF[i])*C_EDG[i,V]  ;; leave to Main Plasma
+        - (1-sigma_V[i])*LF[i]*C_EDG[i,V] ;; going via Lymph to Interstitial 
+        - CL_up[i]*FR*C_EDG[i,V] ;; pinocytosis from vascular to vascular membrane
+        + CL_Up[i]*FR*C_EDG[i,VM] ;; exocytosis from vascular membrane to vascular space 
+        )/V_V[i]; 
+
+    ;; liver, vascular cmpt, exogenous free only
+    d/dt(C_EXG[1..1,liver,V]) = 
+           (PLQ[Liver]*C_EXG[i, LUNG,V] ;; Inlet distributed from Lung
+      + (PLQ[Spleen]-LF[Spleen])*C_EXG[i, Spleen,V] ;; Inlet from Spleen
+      + (PLQ[Pancreas]-LF[Pancreas])*C_EXG[i, Pancreas,V] ;; Inlet from Pancrease
+      + (PLQ[SI]-LF[SI])*C_EXG[i, SI,V]  ;; Inlet from S.I
+      + (PLQ[LI]-LF[LI])*C_EXG[i, LI,V]   ;; Inlet from LF.I
+      - C_EXG[i, Liver,V]*(PLQ[Liver]-LF[Liver] + PLQ[Spleen]-LF[Spleen] 
+                                   + PLQ[Pancreas]-LF[Pancreas] + PLQ[SI]-LF[SI]+ PLQ[LI]-LF[LI]) ;; Outlet
+      - (1-SIGMA_V[Liver])*LF[Liver]*C_EXG[i, Liver,V]
+      - CL_up[Liver]*FR*C_EXG[i, liver,V] ;; pinocytosis from vascular to vascular membrane
+      + CL_Up[Liver]*FR*C_EXG[i, liver,VM] ;; exocytosis from vascular membrane to vascular space 
+      )/V_v[Liver]; 
+    
+    ;; lung, vascular cmpt, exogenous free only
+    d/dt(C_EXG[1,Lung,V]) = ((PLQ[Lung]+LF[Lung])*C_EXG_Plasma
+               - PLQ[Lung]*C_EXG[1,LUNG,V]
+             -(1-SIGMA_V[Lung])*LF[Lung]*C_EXG[1,LUNG,V]
+             - CL_up[Lung]*FR*C_EXG[1,lung,V] ;; pinocytosis from vascular to vascular membrane
+            + CL_Up[Lung]*FR*C_EXG[1,lung,VM];; exocytosis from vascular membrane to vascular space
+                        )/V_v[Lung] ;;
+                        
+    ;; liver, vascular cmpt, endogenous free only
+    d/dt(C_EDG[Liver,V]) = 
+           (PLQ[Liver]*C_EDG[Lung,V] ;; Inlet distributed from Lung
+      + (PLQ[Spleen]-LF[Spleen])*C_EDG[Spleen,V] ;; Inlet from Spleen
+      + (PLQ[Pancreas]-LF[Pancreas])*C_EDG[Pancreas,V] ;; Inlet from Pancrease
+      + (PLQ[SI]-LF[SI])*C_EDG[SI,V]  ;; Inlet from S.I
+      + (PLQ[LI]-LF[LI])*C_EDG[LI,V]   ;; Inlet from LF.I
+      - C_EDG[Liver,V]*(PLQ[Liver]-LF[Liver] + PLQ[Spleen]-LF[Spleen] 
+                              + PLQ[Pancreas]-LF[Pancreas] + PLQ[SI]-LF[SI]+ PLQ[LI]-LF[LI]) ;; Outlet
+      - (1-SIGMA_V[Liver])*LF[Liver]*C_EDG[Liver,V]
+      - CL_up[Liver]*FR*C_EDG[Liver,V] ;; pinocytosis from vascular to vascular membrane
+      + CL_Up[Liver]*FR*C_EDG[Liver,VM] ;; exocytosis from vascular membrane to vascular space 
+      )/V_v[Liver] ; 
+      
+    ;; lung, vascular cmpt, endogenous free only
+    d/dt(C_EDG[Lung,V])= ((PLQ[Lung]+LF[Lung])*C_EDG_Plasma
+               - PLQ[Lung]*C_EDG[Lung,V]
+             -(1-SIGMA_V[Lung])*LF[Lung]*C_EDG[Lung,V]
+             - CL_up[Lung]*FR*C_EDG[Lung,V] ;; pinocytosis from vascular to vascular membrane
+            + CL_Up[Lung]*FR*C_EDG[Lung,VM];; exocytosis from vascular membrane to vascular space 
+                        )/V_v[Lung] ;
+                        
+     ;; Organ: All 
+     ;; Cmpt:  vascular side membrane, endosome(7.4, 6a, 6b), interstitial side membrane, interstitial space
+     ;; Species: exogenous IgG (free & bound), endogeneous (free & bound) IgG and FcRn   
+                
+      ;; vascular side membrane 
+      d/dt(C_EXG[1,1..N_Organs,VM]) = 
+            (CL_up[j]*FR*C_EXG[1,j,V] ;; from vascular space
+        - CL_Up[j]*FR*C_EXG[1,j,VM] ;; to vascular space
+        - CL_UP[j]*FR*C_EXG[1,j,VM] ;; to endosomal pH=7.4
+        + CL_up[j]*FR*C_EXG[1,j,E7b] ;; from endosomal pH=6
+        - K_on_7_EXG*C_EXG[1,j,VM]*C_FcRn_VM[j]*V_VM[j] ;; rxn on 
+        + K_off_7_EXG*C_EXG[1,j,Bound_VM]*V_VM[j] ;; rxn off
+        - k_on_PS*C_EXG[1,j,VM]*C_Mem*V_VM[j] ;; reaction of membrane 
+        + k_off_PS*C_EXG[1,j, Bound_VM_mem]*V_VM[j]
+         )/V_VM[j] ;
+                
+      d/dt(C_EXG[1,1..N_Organs, Bound_VM_mem]) = 
+        (k_on_PS*C_EXG[1,j,VM]*C_Mem*V_VM[j] ;; reaction of membrane 
+        - k_off_PS*C_EXG[1,j, Bound_VM_mem]*V_VM[j]
+        - kint_PS*C_EXG[1,j, Bound_VM_mem]*V_VM[j]
+         )/V_VM[j] ;
+                
+
+      ;; endosomal pH=7.4
+      d/dt(C_EXG[1,1..N_Organs,E7]) = 
+            (CL_UP[j]*FR*C_EXG[1,j,VM] ;; from vascular membrane
+        + CL_UP[j]*(1-FR)*C_EXG[1,j,ISM] ;; from is membrane
+        - CL_UP[j]*C_EXG[1,j,E7] ;; to endosomal pH=6
+        - K_on_7_EXG*C_EXG[1,j,E7]*C_FcRn_E7[j]*V_E7[j] ;; rxn on 
+        + K_off_7_EXG*C_EXG[1,j,bound_E7]*V_E7[j] ;; rxn off
+        + kint_PS*C_EXG[1,j, Bound_VM_mem]*V_VM[j] ;; from membrane bound due to polyspecificity
+        + kint_PS*C_EXG[1,j, Bound_ISM_mem]*V_ISM[j] ;; from membrane bound due to polyspecificity
+         )/V_E7[j]  ;
+
+       ;; Free EXG mAb in E6a
+      d/dt(C_EXG[1,1..N_Organs,E6a]) = 
+            (CL_UP[j]*C_EXG[1,j,E7] ;; from E7
+        - CL_UP[j]*C_EXG[1,j,E6a] ;; move to E7b or being routed to lysosomal for degradation
+        - K_on_6_EXG*C_EXG[1,j,E6a]*C_FcRn_E6a[j]*V_E6a[j] ;; rxn on 
+        + K_off_6_EXG*C_EXG[1,j,Bound_E6a]*V_E6a[j] ;; rxn off
+         )/V_E6a[j] ;
+                
+      ;; endosomal pH=7.4  b 
+      d/dt(C_EXG[1,1..N_Organs,E7b]) = 
+            (CL_UP[j]*(1-Prob_deg)*C_EXG[1,j,E6a]  ;; from 6a
+        - CL_up[j]*C_EXG[1,j,E7b] ;; leave from E7b to membranes 
+        - K_on_7_EXG*C_EXG[1,j,E7b]*C_FcRn_E7b[j]*V_E7b[j] ;; rxn on 
+        + K_off_7_EXG*C_EXG[1,j,Bound_E7b]*V_E7b[j] ;; rxn off
+         )/V_E7b[j];
+                
+
+      ;; IS side mem
+      d/dt(C_EXG[1,1..N_Organs,ISM]) = 
+            (CL_UP[j]*(1-FR)*C_EXG[1,j,IntS] ;; from IS space 
+        - CL_UP[j]*(1-FR)*C_EXG[1,j,ISM] ;; to endosomal pH=7.4
+        + CL_up[j]*(1-FR)*C_EXG[1,j,E7b] ;; from endosomal pH=7.4 b
+        - CL_Up[j]*(1-FR)*C_EXG[1,j,ISM] ;; to interstitial space
+        - K_on_7_EXG*C_EXG[1,j,ISM]*C_FcRn_ISM[j]*V_ISM[j] ;; rxn on 
+        + K_off_7_EXG*C_EXG[1,j,Bound_ISM]*V_ISM[j] ;; rxn off
+        - k_on_PS*C_EXG[1,j,ISM]*C_Mem*V_ISM[j] ;; reaction of membrane 
+        + k_off_PS*C_EXG[1,j, Bound_ISM_mem]*V_ISM[j]
+         )/V_ISM[j] ;
+                
+      d/dt(C_EXG[1,1..N_Organs, Bound_ISM_mem]) = (k_on_PS*C_EXG[1,j,ISM]*C_Mem*V_ISM[j] ;; reaction of membrane 
+        - k_off_PS*C_EXG[1,j, Bound_ISM_mem]*V_ISM[j]
+        - kint_PS*C_EXG[1,j, Bound_ISM_mem]*V_ISM[j]
+         )/V_ISM[j] ;
+                
+      ;; Interstitial space
+      d/dt(C_EXG[1..1,1..N_Organs,IntS]) =   
+        ((1-sigma_V[j])*LF[j]*C_EXG[i,j,V] ;; going from vascular via Lymph 
+        - CL_up[j]*(1-FR)*C_EXG[i,j,IntS] ;; pinocytosis 
+        + CL_Up[j]*(1-FR)*C_EXG[i,j,ISM] ;; exocytosis
+        -(1-Sigma_IS[j])*LF[j]*C_EXG[i,j,IntS];
+        )/V_IntS[j] ;;
+                        
+      ;;;;;;;;;;;;;;;; For FcRn-IgG (bounded)
+      d/dt(C_EXG[1,1..N_Organs,bound_VM]) = 
+          (K_on_7_EXG*C_EXG[1,j,VM]*C_FcRn_VM[j]*V_VM[j] ;; rxn on 
+        - K_off_7_EXG*C_EXG[1,j,Bound_VM]*V_VM[j] ;; rxn off
+        - K_on_7_EXG2*C_EXG[1,j,Bound_VM]*C_FcRn_VM[j]*V_VM[j] ;; rxn on 
+        + K_off_7_EXG2*C_EXG[1,j,Bound2_VM]*V_VM[j] ;; rxn off 
+        + CL_UP[j]*FR*C_EXG[1,j,Bound_E7b]  ;; from Endosomal 6b to Vascular membrane
+        - CL_UP[j]*FR*C_EXG[1,j,Bound_VM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EXG[1,j,Bound_VM]*V_VM[j] ;; recover FcRn when IgG-FrRn is destroyed
+         )/V_VM[j];
+                
+      d/dt(C_EXG[1,1..N_Organs,Bound2_VM]) = 
+          (K_on_7_EXG2*C_EXG[1,j,Bound_VM]*C_FcRn_VM[j]*V_VM[j] ;; rxn on 
+        - K_off_7_EXG2*C_EXG[1,j,Bound2_VM]*V_VM[j] ;; rxn off 
+        + CL_UP[j]*FR*C_EXG[1,j,Bound2_E7b]  ;; from Endosomal 6b to Vascular membrane
+        - CL_UP[j]*FR*C_EXG[1,j,Bound2_VM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EXG[1,j,Bound2_VM]*V_VM[j] ;; recover FcRn when IgG-FrRn is destroyed
+         )/V_VM[j] ;
+                
+
+      ;; endosomal space 
+      d/dt(C_EXG[1,1..N_Organs,bound_E7]) = 
+        (+ K_on_7_EXG*C_EXG[1,j,E7]*C_FcRn_E7[j]*V_E7[j] ;; rxn on 
+        - K_off_7_EXG*C_EXG[1,j,bound_E7]*V_E7[j] ;; rxn off
+        - K_on_7_EXG2*C_EXG[1,j,bound_E7]*C_FcRn_E7[j]*V_E7[j] ;; rxn on 
+        + K_off_7_EXG2*C_EXG[1,j,bound2_E7]*V_E7[j] ;; rxn off 
+        - CL_UP[j]*C_EXG[1,j,Bound_E7] ;; goes to E6
+        + CL_UP[j]*FR*C_EXG[1,j,Bound_VM] ;; from VM 
+        + CL_UP[j]*(1-FR)*C_EXG[1,j,Bound_ISM]  ;; from ISM
+         )/V_E7[j] ;
+                
+
+      d/dt(C_EXG[1,1..N_Organs,bound2_E7]) = 
+          (K_on_7_EXG2*C_EXG[1,j,bound_E7]*C_FcRn_E7[j]*V_E7[j] ;; rxn on 
+        - K_off_7_EXG2*C_EXG[1,j,bound2_E7]*V_E7[j] ;; rxn off 
+        - CL_UP[j]*C_EXG[1,j,Bound2_E7] ;; goes to E6
+        + CL_UP[j]*FR*C_EXG[1,j,Bound2_VM] ;; from VM 
+        + CL_UP[j]*(1-FR)*C_EXG[1,j,Bound2_ISM]   ;; from ISM
+         )/V_E7[j] ;
+                
+      ;; endosomal pH=6 a
+      d/dt(C_EXG[1,1..N_Organs,bound_E6a]) = 
+        (+ K_on_6_EXG*C_EXG[1,j,E6a]*C_FcRn_E6a[j]*V_E6a[j] ;; rxn on 
+        - K_off_6_EXG*C_EXG[1,j,bound_E6a]*V_E6a[j] ;; rxn off
+        - K_on_6_EXG2*C_EXG[1,j,bound_E6a]*C_FcRn_E6a[j]*V_E6a[j] ;; rxn on 
+        + K_off_6_EXG2*C_EXG[1,j,bound2_E6a]*V_E6a[j] ;; rxn off 
+        + CL_UP[j]*C_EXG[1,j,Bound_E7] ;; internalization, from pH7 to pH6a
+        - CL_up[j]*C_EXG[1,j,Bound_E6a] ;; exocytosis, from E6a to E7b
+        )/V_E6a[j] ;
+                
+      d/dt(C_EXG[1,1..N_Organs,bound2_E6a]) = 
+        (+ K_on_6_EXG2*C_EXG[1,j,bound_E6a]*C_FcRn_E6a[j]*V_E6a[j] ;; rxn on 
+        - K_off_6_EXG2*C_EXG[1,j,bound2_E6a]*V_E6a[j] ;; rxn off 
+        + CL_UP[j]*C_EXG[1,j,Bound2_E7] ;; internalization, from pH7 to pH6a
+        - CL_up[j]*C_EXG[1,j,Bound2_E6a] ;; exocytosis, from E6a to E7b
+        )/V_E6a[j];
+                
+      ;; endosomal pH=7.4  b
+      d/dt(C_EXG[1,1..N_Organs, bound_E7b]) = 
+        (+ K_on_7_EXG*C_EXG[1,j, E7b]*C_FcRn_E7b[j]*V_E7b[j] ;; rxn on 
+        - K_off_7_EXG*C_EXG[1,j,bound_E7b]*V_E7b[j] ;; rxn off
+        - K_on_7_EXG2*C_EXG[1,j, bound_E7b]*C_FcRn_E7b[j]*V_E7b[j] ;; rxn on 
+        + K_off_7_EXG2*C_EXG[1,j,bound2_E7b]*V_E7b[j] ;; rxn off 
+        + CL_UP[j]*C_EXG[1,j,Bound_E6a] ;; internalization, from E6a to E7b
+        - CL_up[j]*C_EXG[1,j,Bound_E7b] ;; exocytosis, from E7b to vascular/interstitial membrane
+         )/V_E7b[j];
+                
+      d/dt(C_EXG[1,1..N_Organs, bound2_E7b]) = 
+        (+ K_on_7_EXG2*C_EXG[1,j, bound_E7b]*C_FcRn_E7b[j]*V_E7b[j] ;; rxn on 
+        - K_off_7_EXG2*C_EXG[1,j,bound2_E7b]*V_E7b[j] ;; rxn off 
+        + CL_UP[j]*C_EXG[1,j,Bound2_E6a] ;; internalization, from E6a to E7b
+        - CL_up[j]*C_EXG[1,j,Bound2_E7b] ;; exocytosis, from E7b to vascular/interstitial membrane
+         )/V_E7b[j];
+                
+      ;; Interstitial membrane
+      d/dt(C_EXG[1,1..N_Organs,bound_ISM]) = 
+          (K_on_7_EXG*C_EXG[1,j,ISM]*C_FcRn_ISM[j]*V_ISM[j] ;; rxn on  
+        - K_off_7_EXG*C_EXG[1,j,Bound_ISM]*V_ISM[j] ;; rxn off
+        - K_on_7_EXG2*C_EXG[1,j,Bound_ISM]*C_FcRn_ISM[j]*V_ISM[j] ;; rxn on 
+        + K_off_7_EXG2*C_EXG[1,j,Bound2_ISM]*V_ISM[j] ;; rxn off 
+        + CL_UP[j]*(1-FR)*C_EXG[1,j,Bound_E7b]  ;; from Endosomal 6 to interstitial membrane
+        - CL_UP[j]*(1-FR)*C_EXG[1,j,Bound_ISM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EXG[1,j,Bound_ISM]*V_ISM[j]  ;; recover FcRn when IgG-FrRn is destroyed
+         )/V_ISM[j];
+                
+      d/dt(C_EXG[1,1..N_Organs,bound2_ISM]) = 
+        (+ K_on_7_EXG2*C_EXG[1,j,Bound_ISM]*C_FcRn_ISM[j]*V_ISM[j] ;; rxn on 
+        - K_off_7_EXG2*C_EXG[1,j,Bound2_ISM]*V_ISM[j] ;; rxn off 
+        + CL_UP[j]*(1-FR)*C_EXG[1,j,Bound2_E7b]  ;; from Endosomal 6 to interstitial membrane
+        - CL_UP[j]*(1-FR)*C_EXG[1,j,Bound2_ISM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EXG[1,j,Bound2_ISM]*V_ISM[j]  ;; recover FcRn when IgG-FrRn is destroyed
+         )/V_ISM[j];
+                
+  ;****************************************************************************************************      
+        
+      ;; Free Endogenous IgG 
+      
+        
+      ;; vascular side membrane 
+      d/dt(C_EDG[1..N_Organs,VM]) = (CL_up[i]*FR*C_EDG[i,V] ;; from vascular space
+        - CL_Up[i]*FR*C_EDG[i,VM] ;; to vascular space
+        - CL_UP[i]*FR*C_EDG[i,VM] ;; to endosomal pH=7.4
+        + CL_up[i]*FR*C_EDG[i,E7b] ;; from endosomal pH=7.4 b
+        - K_on_7_EDG*C_EDG[i,VM]*C_FcRn_VM[i]*V_VM[i] ;; rxn on 
+        + K_off_7_EDG*C_EDG[i,Bound_VM]*V_VM[i] ;; rxn off
+        )/V_VM[i];
+      
+      ;; endosomal pH=7.4
+      d/dt(C_EDG[1..N_Organs,E7])= (CL_UP[i]*FR*C_EDG[i,VM] ;; from vascular membrane
+        + CL_UP[i]*(1-FR)*C_EDG[i,ISM] ;; from is membrane
+        - CL_UP[i]*C_EDG[i,E7] ;; to endosomal pH=6
+        - K_on_7_EDG*C_EDG[i,E7]*C_FcRn_E7[i]*V_E7[i] ;; rxn on 
+        + K_off_7_EDG*C_EDG[i,bound_E7]*V_E7[i] ;; rxn off
+        )/V_E7[i];;
+      
+      ;; endosomal pH=6.0 a 
+      d/dt(C_EDG[1..N_Organs,E6a]) = (CL_UP[i]*C_EDG[i,E7] ;; from E7
+        - CL_UP[i]*C_EDG[i,E6a] ;; move to E7b or being routed to lysosomal for degradation
+        - K_on_6_EDG*C_EDG[i,E6a]*C_FcRn_E6a[i]*V_E6a[i] ;; rxn on 
+        + K_off_6_EDG*C_EDG[i,Bound_E6a]*V_E6a[i] ;; rxn off
+        )/V_E6a[i]; 
+      
+      ;; endosomal pH=7.4  b 
+      d/dt(C_EDG[1..N_Organs,E7b]) = (CL_UP[i]*(1-Prob_deg)*C_EDG[i,E6a]  ;; from 6a
+        - CL_up[i]*C_EDG[i,E7b] ;; leave from E7b to membranes 
+        - K_on_7_EDG*C_EDG[i,E7b]*C_FcRn_E7b[i]*V_E7b[i] ;; rxn on 
+        + K_off_7_EDG*C_EDG[i,Bound_E7b]*V_E7b[i] ;; rxn off
+        )/V_E7b[i];   
+              
+      ;; IS side mem
+      d/dt(C_EDG[1..N_Organs,ISM]) = (CL_UP[i]*(1-FR)*C_EDG[i,IntS] ;; from IS space 
+        - CL_UP[i]*(1-FR)*C_EDG[i,ISM] ;; to endosomal pH=7.4
+        + CL_up[i]*(1-FR)*C_EDG[i,E7b] ;; from endosomal pH=7.4 b
+        - CL_Up[i]*(1-FR)*C_EDG[i,ISM] ;; to interstitial space
+        - K_on_7_EDG*C_EDG[i,ISM]*C_FcRn_ISM[i]*V_ISM[i] ;; rxn on 
+        + K_off_7_EDG*C_EDG[i,Bound_ISM]*V_ISM[i] ;; rxn off
+        )/V_ISM[i];
+    
+      ;; Interstitial space
+      d/dt(C_EDG[1..N_Organs,IntS])=   
+        ((1-sigma_V[i])*LF[i]*C_EDG[i,V] ;; going from vascular via Lymph 
+        - CL_up[i]*(1-FR)*C_EDG[i,IntS] ;; pinocytosis 
+        + CL_Up[i]*(1-FR)*C_EDG[i,ISM] ;; exocytosis
+        -(1-Sigma_IS[i])*LF[i]*C_EDG[i,IntS];
+        )/V_IntS[i] ;;
+                
+      ;; ==============================================================================================
+      ;; Bound Endogenous IgG 
+        
+      ;;;;;;;;;;;;;;;; For FcRn-IgG (bounded)
+      d/dt(C_EDG[1..N_Organs,bound_VM]) = 
+          (K_on_7_EDG*C_EDG[i,VM]*C_FcRn_VM[i]*V_vm[i] ;; rxn on 
+        - K_off_7_EDG*C_EDG[i,Bound_VM]*V_vm[i] ;; rxn off
+        - K_on_7_EDG2*C_EDG[i,Bound_VM]*C_FcRn_VM[i]*V_VM[i] ;; rxn on 
+        + K_off_7_EDG2*C_EDG[i,Bound2_VM]*V_VM[i] ;; rxn off 
+        + CL_UP[i]*FR*C_EDG[i,Bound_E7b]  ;; from Endosomal 6b to Vascular membrane
+        - CL_UP[i]*FR*C_EDG[i,Bound_VM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EDG[i,Bound_VM]*V_vm[i] ;; recover FcRn when IgG-FrRn is destroyed
+        )/V_VM[i] ;
+      
+      d/dt(C_EDG[1..N_Organs,Bound2_VM]) = 
+          (K_on_7_EDG2*C_EDG[i,Bound_VM]*C_FcRn_VM[i]*V_VM[i] ;; rxn on 
+        - K_off_7_EDG2*C_EDG[i,Bound2_VM]*V_VM[i] ;; rxn off 
+        + CL_UP[i]*FR*C_EDG[i,Bound2_E7b]  ;; from Endosomal 6b to Vascular membrane
+        - CL_UP[i]*FR*C_EDG[i,Bound2_VM] ;; to Endosomal 7
+        - kdeg_FcRn_Ab*C_EDG[i,Bound2_VM]*V_VM[i] ;; recover FcRn when IgG-FrRn is destroyed
+        )/V_VM[i] ;
+
+      ;; endosomal space 
+      d/dt(C_EDG[1..N_Organs,bound_E7]) = 
+        (+ K_on_7_EDG*C_EDG[i,E7]*C_FcRn_E7[i]*V_E7[i] ;; rxn on 
+        - K_off_7_EDG*C_EDG[i,bound_E7]*V_E7[i] ;; rxn off
+        - K_on_7_EDG2*C_EDG[i,bound_E7]*C_FcRn_E7[i]*V_E7[i] ;; rxn on 
+        + K_off_7_EDG2*C_EDG[i,bound2_E7]*V_E7[i] ;; rxn off 
+        - CL_UP[i]*C_EDG[i,Bound_E7] ;; goes to E6
+        + CL_UP[i]*FR*C_EDG[i,Bound_VM] ;; from VM 
+        + CL_UP[i]*(1-FR)*C_EDG[i,Bound_ISM];  ;; from ISM
+        )/V_E7[i] ;;
+                
+      d/dt(C_EDG[1..N_Organs,bound2_E7]) = 
+        (+ K_on_7_EDG2*C_EDG[i,bound_E7]*C_FcRn_E7[i]*V_E7[i] ;; rxn on 
+        - K_off_7_EDG2*C_EDG[i,bound2_E7]*V_E7[i] ;; rxn off 
+        - CL_UP[i]*C_EDG[i,Bound2_E7] ;; goes to E6
+        + CL_UP[i]*FR*C_EDG[i,Bound2_VM] ;; from VM 
+        + CL_UP[i]*(1-FR)*C_EDG[i,Bound2_ISM];  ;; from ISM
+        )/V_E7[i] ;;
+        
+      ;; endosomal pH=6 a
+      d/dt(C_EDG[1..N_Organs,bound_E6a]) = 
+        (+ K_on_6_EDG*C_EDG[i,E6a]*C_FcRn_E6a[i]*V_e6a[i] ;; rxn on 
+        - K_off_6_EDG*C_EDG[i,bound_E6a]*V_e6a[i] ;; rxn off
+        - K_on_6_EDG2*C_EDG[i,bound_E6a]*C_FcRn_E6a[i]*V_E6a[i] ;; rxn on 
+        + K_off_6_EDG2*C_EDG[i,bound2_E6a]*V_E6a[i] ;; rxn off 
+        + CL_UP[i]*C_EDG[i,Bound_E7] ;; internalization, from pH7 to pH6a
+        - CL_up[i]*C_EDG[i,Bound_E6a] ;; exocytosis, from E6a to E7b
+        )/V_E6a[i] ;; 
+  
+      d/dt(C_EDG[1..N_Organs,bound2_E6a]) = 
+        (+ K_on_6_EDG2*C_EDG[i,bound_E6a]*C_FcRn_E6a[i]*V_E6a[i] ;; rxn on 
+        - K_off_6_EDG2*C_EDG[i,bound2_E6a]*V_E6a[i] ;; rxn off 
+        + CL_UP[i]*C_EDG[i,Bound2_E7] ;; internalization, from pH7 to pH6a
+        - CL_up[i]*C_EDG[i,Bound2_E6a] ;; exocytosis, from E6a to E7b
+        )/V_E6a[i] ; 
+  
+      ;; endosomal pH=7.4  b
+      d/dt(C_EDG[1..N_Organs,bound_E7b]) = 
+        (+ K_on_7_EDG*C_EDG[i,E7b]*C_FcRn_E7b[i]*V_E7b[i] ;; rxn on 
+        - K_off_7_EDG*C_EDG[i,bound_E7b]*V_E7b[i] ;; rxn off
+        - K_on_7_EDG2*C_EDG[i, bound_E7b]*C_FcRn_E7b[i]*V_E7b[i] ;; rxn on 
+        + K_off_7_EDG2*C_EDG[i,bound2_E7b]*V_E7b[i] ;; rxn off 
+        + CL_UP[i]*C_EDG[i,Bound_E6a] ;; internalization, from E6a to E7b
+        - CL_up[i]*C_EDG[i,Bound_E7b] ;; exocytosis, from E7b to vascular/interstitial membrane
+        )/V_E7b[i] ; 
+        
+      d/dt(C_EDG[1..N_Organs,bound2_E7b]) = 
+        (+ K_on_7_EDG2*C_EDG[i, bound_E7b]*C_FcRn_E7b[i]*V_E7b[i] ;; rxn on 
+        - K_off_7_EDG2*C_EDG[i,bound2_E7b]*V_E7b[i] ;; rxn off 
+        + CL_UP[i]*C_EDG[i,Bound2_E6a] ;; internalization, from E6a to E7b
+        - CL_up[i]*C_EDG[i,Bound2_E7b] ;; exocytosis, from E7b to vascular/interstitial membrane
+        )/V_E7b[i] ; 
+        
+      ;; Interstitial membrane
+      d/dt(C_EDG[1..N_Organs,bound_ISM]) = 
+        (+ K_on_7_EDG*C_EDG[i,ISM]*C_FcRn_ISM[i]*V_ism[i] ;; rxn on  
+        - K_off_7_EDG*C_EDG[i,Bound_ISM]*V_ism[i] ;; rxn off
+        - K_on_7_EDG2*C_EDG[i,Bound_ISM]*C_FcRn_ISM[i]*V_ISM[i] ;; rxn on 
+        + K_off_7_EDG2*C_EDG[i,Bound2_ISM]*V_ISM[i] ;; rxn off 
+        + CL_UP[i]*(1-FR)*C_EDG[i,Bound_E7b]  ;; from Endosomal 6 to interstitial membrane
+        - CL_UP[i]*(1-FR)*C_EDG[i,Bound_ISM] ;; to Endosomal 7.4
+        - kdeg_FcRn_Ab*C_EDG[i,Bound_ISM]*V_ism[i]  ;; recover FcRn when IgG-FrRn is destroyed
+        )/V_ISM[i] ;
+        
+      d/dt(C_EDG[1..N_Organs,bound2_ISM]) = 
+        (+ K_on_7_EDG2*C_EDG[i,Bound_ISM]*C_FcRn_ISM[i]*V_ISM[i] ;; rxn on 
+        - K_off_7_EDG2*C_EDG[i,Bound2_ISM]*V_ISM[i] ;; rxn off 
+        + CL_UP[i]*(1-FR)*C_EDG[i,Bound2_E7b]  ;; from Endosomal 7.4 b to interstitial membrane
+        - CL_UP[i]*(1-FR)*C_EDG[i,Bound2_ISM] ;; to Endosomal 7.4
+        - kdeg_FcRn_Ab*C_EDG[i,Bound2_ISM]*V_ism[i]  ;; recover FcRn when IgG-FrRn is destroyed
+        )/V_ISM[i] ;
+        
+      ;; ==============================================================================================
+      ;; Free FcRn in Organs
+  
+      ;; vascular side membrane 
+      d/dt(C_FcRn_VM[1..N_Organs]) = 
+        (+ CL_up[i]*FR*C_FcRn_E7b[i]*(1-FcRn_recycle_fraction); from endosomal pH=7.4  b
+        - CL_Up[i]*FR*C_FcRn_VM[i] ;; to vascular space
+        ;; EDG 
+        +v_vm[i]*(
+        - K_on_7_EDG*C_EDG[i,VM]*C_FcRn_VM[i] ;; rxn on in vascular side membrane 
+        + K_off_7_EDG*C_EDG[i,Bound_VM] ;; rxn off vascular side membrane 
+        + kdeg_FcRn_Ab*C_EDG[i,Bound_VM]
+        - K_on_7_EDG2*C_EDG[i,Bound_VM]*C_FcRn_VM[i] ;; rxn on in vascular side membrane 
+        + K_off_7_EDG2*C_EDG[i,Bound2_VM] ;; rxn off vascular side membrane 
+        + 2*kdeg_FcRn_Ab*C_EDG[i,Bound2_VM] ;; 
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; EXG 
+        - K_on_7_EXG*C_EXG[1,i,VM]*C_FcRn_VM[i] ;; rxn on in vascular side membrane 
+        + K_off_7_EXG*C_EXG[1,i,Bound_VM] ;; rxn off vascular side membrane 
+        + kdeg_FcRn_Ab*C_EXG[1,i,Bound_VM]
+        - K_on_7_EXG2*C_EXG[1,i,Bound_VM]*C_FcRn_VM[i] ;; rxn on in vascular side membrane 
+        + K_off_7_EXG2*C_EXG[1,i,Bound2_VM] ;; rxn off vascular side membrane 
+        + 2*kdeg_FcRn_Ab*C_EXG[1,i,Bound2_VM] ;; 
+        ))/V_VM[i];
+      
+      ;; endosomal pH=7.4
+      d/dt(C_FcRn_E7[1..N_Organs]) = 
+                 (CL_UP[i]*FR*C_FcRn_VM[i] ;; from vascular membrane
+        + CL_UP[i]*(1-FR)*C_FcRn_ISM[i] ;; from is membrane
+        - CL_UP[i]*C_FcRn_E7[i] ;; to endosomal pH=6
+        + V_E7[i]*(
+        - K_on_7_EDG*C_EDG[i,E7]*C_FcRn_E7[i] ;; rxn on endosomal pH=7.4
+        + K_off_7_EDG*C_EDG[i,bound_E7] ;; rxn off endosomal pH=7.4.
+        - K_on_7_EDG2*C_EDG[i,bound_E7]*C_FcRn_E7[i] ;; rxn on endosomal pH=7.4. 
+        + K_off_7_EDG2*C_EDG[i,bound2_E7] ;; rxn off endosomal pH=7.4. 
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; EXG
+        - K_on_7_EXG*C_EXG[1,i,E7]*C_FcRn_E7[i] ;; rxn on endosomal pH=7.4
+        + K_off_7_EXG*C_EXG[1,i,bound_E7] ;; rxn off endosomal pH=7.4
+        - K_on_7_EXG2*C_EXG[1,i,bound_E7]*C_FcRn_E7[i] ;; rxn on endosomal pH=7.4. 
+        + K_off_7_EXG2*C_EXG[1,i,bound2_E7] ;; rxn off endosomal pH=7.4. 
+        ))/V_E7[i];;
+      
+      ;; endosomal pH=6.0
+      d/dt(C_FcRn_E6a[1..N_Organs]) = (CL_UP[i]*C_FcRn_E7[i] ;; from E7
+        - CL_UP[i]*C_FcRn_E6a[i] ;; from E6a to E7b
+        + CL_up[i]*C_FcRn_E7b[i]*FcRn_recycle_fraction
+        + V_E6a[i]*(
+        - K_on_6_EDG*C_EDG[i,E6a]*C_FcRn_E6a[i] ;; rxn on endosomal pH=6.0
+        + K_off_6_EDG*C_EDG[i,Bound_E6a] ;; rxn off endosomal pH=6.0
+        - K_on_6_EDG2*C_EDG[i,Bound_E6a]*C_FcRn_E6a[i] ;; rxn on endosomal pH=6.0. 
+        + K_off_6_EDG2*C_EDG[i,Bound2_E6a] ;; rxn off endosomal pH=6.0. 
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; EXG
+        - K_on_6_EXG*C_EXG[1,i,E6a]*C_FcRn_E6a[i] ;; rxn on endosomal pH=6.0
+        + K_off_6_EXG*C_EXG[1,i,Bound_E6a] ;; rxn off endosomal pH=6.0
+        - K_on_6_EXG2*C_EXG[1,i,Bound_E6a]*C_FcRn_E6a[i] ;; rxn on endosomal pH=6.0. 
+        + K_off_6_EXG2*C_EXG[1,i,Bound2_E6a] ;; rxn off endosomal pH=6.0. 
+        ))/V_E6a[i] ; 
+    
+      ;; endosomal pH=7.4
+      d/dt(C_FcRn_E7b[1..N_Organs]) = (CL_UP[i]*C_FcRn_E6a[i] ;; from E6a
+        - CL_UP[i]*C_FcRn_E7b[i] ;; from E7b to membranes
+        + V_E7b[i]*(
+        - K_on_7_EDG*C_EDG[i,E7b]*C_FcRn_E7b[i] ;; rxn on endosomal pH=7.4
+        + K_off_7_EDG*C_EDG[i,Bound_E7b] ;; rxn off endosomal pH=7.4
+        - K_on_7_EDG2*C_EDG[i,Bound_E7b]*C_FcRn_E7b[i] ;; rxn on endosomal pH=7.4. 
+        + K_off_7_EDG2*C_EDG[i,Bound2_E7b] ;; rxn off endosomal pH=7.4. 
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; EXG 
+        - K_on_7_EXG*C_EXG[1,i,E7b]*C_FcRn_E7b[i] ;; rxn on endosomal pH=7.4
+        + K_off_7_EXG*C_EXG[1,i,Bound_E7b] ;; rxn off endosomal pH=7.4
+        - K_on_7_EXG2*C_EXG[1,i,Bound_E7b]*C_FcRn_E7b[i] ;; rxn on endosomal pH=7.4. 
+        + K_off_7_EXG2*C_EXG[1,i,Bound2_E7b] ;; rxn off endosomal pH=7.4. 
+        ))/V_E7b[i]; 
+        
+      ;; IS side mem
+      d/dt(C_FcRn_ISM[1..N_Organs]) = 
+        (- CL_UP[i]*(1-FR)*C_FcRn_ISM[i] ;; from IS membrane to endosomal pH=7.4
+        + CL_up[i]*(1-FR)*C_FcRn_E7b[i]*(1-FcRn_recycle_fraction) ;; from endosomal pH=7.4  b to IS side mem
+        + V_ISM[i]*(
+        - K_on_7_EDG*C_EDG[i,ISM]*C_FcRn_ISM[i] ;; rxn on IS side mem
+        + K_off_7_EDG*C_EDG[i,Bound_ISM] ;; rxn off IS side mem
+        + kdeg_FcRn_Ab*C_EDG[i,Bound_ISM]
+        - K_on_7_EDG2*C_EDG[i,Bound_ISM]*C_FcRn_ISM[i] ;; rxn on IS side mem. 
+        + K_off_7_EDG2*C_EDG[i,Bound2_ISM] ;; rxn off IS side mem. 
+        + 2*kdeg_FcRn_Ab*C_EDG[i,Bound2_ISM] ;; 
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; EXG 
+        - K_on_7_EXG*C_EXG[1,i,ISM]*C_FcRn_ISM[i] ;; rxn on IS side mem
+        + K_off_7_EXG*C_EXG[1,i,Bound_ISM] ;; rxn off IS side mem
+        + kdeg_FcRn_Ab*C_EXG[1,i,Bound_ISM]
+        - K_on_7_EXG2*C_EXG[1,i,Bound_ISM]*C_FcRn_ISM[i] ;; rxn on IS side mem. 
+        + K_off_7_EXG2*C_EXG[1,i,Bound2_ISM] ;; rxn off IS side mem. 
+        + 2*kdeg_FcRn_Ab*C_EXG[1,i,Bound2_ISM] ;; 
+        ))/V_ISM[i];
+      
+ 
+;; ==============================================================================================  
+;; Main Plasma Compartment    
+                  
+      ;;; flux of endogenous IgG in Lymph node
+      d/dt(C_EDG_LN) = 
+          ((1-Sigma_IS[Heart])*LF[Heart]*C_EDG[Heart, IntS]
+        + (1-Sigma_IS[Kidney])*LF[Kidney]*C_EDG[Kidney, IntS]
+        + (1-Sigma_IS[Muscle])*LF[Muscle]*C_EDG[Muscle, IntS]
+        + (1-Sigma_IS[Skin])*LF[Skin]*C_EDG[Skin, IntS]
+        + (1-Sigma_IS[Brain])*LF[Brain]*C_EDG[Brain, IntS]
+        + (1-Sigma_IS[Adipose])*LF[Adipose]*C_EDG[Adipose, IntS]
+        + (1-Sigma_IS[Thymus])*LF[Thymus]*C_EDG[Thymus, IntS]
+        + (1-Sigma_IS[Liver])*LF[Liver]*C_EDG[Liver, IntS]
+        + (1-Sigma_IS[Spleen])*LF[Spleen]*C_EDG[Spleen, IntS]
+        + (1-Sigma_IS[Pancreas])*LF[Pancreas]*C_EDG[Pancreas, IntS]
+        + (1-Sigma_IS[SI])*LF[SI]*C_EDG[SI, IntS]
+        + (1-Sigma_IS[LI])*LF[LI]*C_EDG[LI, IntS]
+        + (1-Sigma_IS[Bone])*LF[Bone]*C_EDG[Bone, IntS]
+        + (1-Sigma_IS[Other])*LF[Other]*C_EDG[Other, IntS]
+        + (1-Sigma_IS[Lung])*LF[Lung]*C_EDG[Lung, IntS]
+        - L_LymphNode*C_EDG_LN)/V_LN;         
+            
+      ;;; flux of exogenous IgG in Plasma
+      w_other_1_EXG_Plasma = 
+        (PLQ[Heart]-LF[Heart])*C_EXG[1,Heart,V] 
+        +(PLQ[Kidney]-LF[Kidney])*C_EXG[1,Kidney,V]
+        +(PLQ[Muscle]-LF[Muscle])*C_EXG[1,Muscle,V]
+        +(PLQ[Skin]-LF[Skin])*C_EXG[1,Skin,V]
+        +(PLQ[Brain]-LF[Brain])*C_EXG[1,Brain,V]
+        +(PLQ[Adipose]-LF[Adipose])*C_EXG[1,Adipose,V]
+        +(PLQ[Thymus]-LF[Thymus])*C_EXG[1,Thymus,V]
+        +(PLQ[Liver]-LF[Liver])*C_EXG[1,Liver,V]
+           +(PLQ[Spleen]-LF[Spleen])*C_EXG[1,Liver,V]
+        +(PLQ[Pancreas]-LF[Pancreas])*C_EXG[1,Liver,V]
+        +(PLQ[SI]-LF[SI])*C_EXG[1,Liver,V]
+        +(PLQ[LI]-LF[LI])*C_EXG[1,Liver,V]
+        +(PLQ[Bone]-LF[Bone])*C_EXG[1,Bone,V]
+        +(PLQ[Other]-LF[Other])*C_EXG[1,Other,V]
+        -(PLQ[Lung]+LF[Lung])*C_EXG_Plasma
+        +L_LymphNode*C_EXG_LN 
+
+		w_other_2_EXG_Plasma = 0 
+
+		w_other_3_EXG_Plasma = 0
+        
+
+      ;;; flux of exogenous IgG in Lymph node
+      d/dt(C_EXG_LN) = 
+          ((1-Sigma_IS[Heart])*LF[Heart]*C_EXG[1,Heart, IntS]
+        + (1-Sigma_IS[Kidney])*LF[Kidney]*C_EXG[1,Kidney, IntS]
+        + (1-Sigma_IS[Muscle])*LF[Muscle]*C_EXG[1,Muscle, IntS]
+        + (1-Sigma_IS[Skin])*LF[Skin]*C_EXG[1,Skin, IntS]
+        + (1-Sigma_IS[Brain])*LF[Brain]*C_EXG[1,Brain, IntS]
+        + (1-Sigma_IS[Adipose])*LF[Adipose]*C_EXG[1,Adipose, IntS]
+        + (1-Sigma_IS[Thymus])*LF[Thymus]*C_EXG[1,Thymus, IntS]
+        + (1-Sigma_IS[Liver])*LF[Liver]*C_EXG[1,Liver, IntS]
+        + (1-Sigma_IS[Spleen])*LF[Spleen]*C_EXG[1,Spleen, IntS]
+        + (1-Sigma_IS[Pancreas])*LF[Pancreas]*C_EXG[1,Pancreas, IntS]
+        + (1-Sigma_IS[SI])*LF[SI]*C_EXG[1,SI, IntS]
+        + (1-Sigma_IS[LI])*LF[LI]*C_EXG[1,LI, IntS]
+        + (1-Sigma_IS[Bone])*LF[Bone]*C_EXG[1,Bone, IntS]
+        + (1-Sigma_IS[Other])*LF[Other]*C_EXG[1,Other, IntS]
+        + (1-Sigma_IS[Lung])*LF[Lung]*C_EXG[1,LUng, IntS]
+        - L_LymphNode*C_EXG_LN
+                )/V_LN ; 
+      
+	d/dt(C_EDG_Plasma) = 0/V_plasma
+
+    d/dt(AUC_free_mAb) = C_EXG_Plasma_uM 
+
+	
+	;; SIMULATION EQUATIONS
+    
+    PS_Kd = 10^(EXP(PS_a - PS_b*PS_Score)) 
+    
+    Organ_Endothelial_Cell[1..N_Organs]  = Total_Endothelial_Cell*Endothelial_Cell_Frac[i]*Scale_Factor;; 
+    V_endo_by_number = Total_Endothelial_Cell*(4/3*PI*Endosome_radius^3)*Endosome_per_cell*1e-15;; 
+    V_endosomal[1..N_Organs] = CL_Up_in_nL_per_hour_per_million_cells*pino_time*Organ_Endothelial_Cell[i]*1E-6*1E-9;; 
+    FcRn_Conc = FcRn_Availability*total_FcRn_in_nmole*1e-3/ARRAYSUM(V_endosomal[*]);; 
+    
+;===============================================================================================================================================
+    
+    ;;; General relationship ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
+    V_E7[1..N_Organs] = V_endosomal[i]*E7_Vol_pct;; 
+    V_E6a[1..N_Organs] = V_endosomal[i]*E6a_Vol_pct;; 
+    V_E7b[1..N_Organs] = V_endosomal[i]*E7b_Vol_pct;; 
+            
+    CL_UP[1..N_Organs]  = CL_Up_in_nL_per_hour_per_million_cells*Organ_Endothelial_Cell[i]*1E-15
+
+    V_VM[1..N_Organs]          = CL_UP[i]*tau_VM
+    V_ISM [1..N_Organs]        = CL_UP[i]*tau_ISM
+
+    ;;; Readout variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	
+    C_plasma_readout = C_EXG_Plasma*1E3;;
+    EXG_ugml_Readout = C_EXG_Plasma*MW_EDG/1000;;  ;;
+    FcRn_in_uM = FcRn_Conc ;;
+            
+            ;;  DUMMY VARIABLES FOR SUMMATION
+            CV_VM[1..N_Organs] = C_FcRn_VM[i]*V_VM[i] ;;
+            CV_E7[1..N_Organs] = C_FcRn_E7[i]*V_E7[i] ;;
+            CV_E6a[1..N_Organs] = C_FcRn_E6a[i]*V_E6a[i] ;;
+            CV_E7b[1..N_Organs] = C_FcRn_E7b[i]*V_E7b[i] ;;
+            CV_ISM[1..N_Organs] = C_FcRn_ISM[i]*V_ISM[i] ;;            
+            ;;
+			
+      Free_FcRn[FcRn_VM] = ARRAYSUM(CV_VM[*])*1E3;; 
+      Free_FcRn[FcRn_E7] = ARRAYSUM(CV_E7[*])*1E3;;
+      Free_FcRn[FcRn_E6a] = ARRAYSUM(CV_E6a[*])*1E3;;
+      Free_FcRn[FcRn_E7b] = ARRAYSUM(CV_E7b[*])*1E3;;
+      Free_FcRn[FcRn_ISM] = ARRAYSUM(CV_ISM[*])*1E3;;      
+
+      Free_FcRn_Pct[1..5] = Free_FcRn[i]/Total_FcRn[i];
+
+        
+        ;;  DUMMY VARIABLES FOR SUMMATION
+        C_EDG_bVM[1..N_Organs,Bound_VM]       = C_EDG[i,Bound_VM] 
+        C_EDG_b2VM[1..N_Organs,Bound2_VM]     = C_EDG[i,Bound2_VM]
+        C_EDG_bE7[1..N_Organs,Bound_E7]       = C_EDG[i,Bound_E7] 
+        C_EDG_b2E7[1..N_Organs,Bound2_E7]     = C_EDG[i,Bound2_E7]
+        C_EDG_bE6a[1..N_Organs,Bound_E6a]     = C_EDG[i,Bound_E6a] 
+        C_EDG_b2E6a[1..N_Organs,Bound2_E6a]   = C_EDG[i,Bound2_E6a]
+        C_EDG_bE7b[1..N_Organs,Bound_E7b]     = C_EDG[i,Bound_E7b] 
+        C_EDG_b2E7b[1..N_Organs,Bound2_E7b]   = C_EDG[i,Bound2_E7b]
+        C_EDG_bISM[1..N_Organs,Bound_ISM]     = C_EDG[i,Bound_ISM] 
+        C_EDG_b2ISM[1..N_Organs,Bound2_ISM]   = C_EDG[i,Bound2_ISM]
+
+        C_EXG_1_bVM[1..N_Organs]            = C_EXG[1,i,Bound_VM]
+        C_EXG_1_b2VM[1..N_Organs]           = C_EXG[1,i,Bound2_VM]
+        C_EXG_1_bISM[1..N_Organs]           = C_EXG[1,i,Bound_ISM]
+        C_EXG_1_b2ISM[1..N_Organs]          = C_EXG[1,i,Bound2_ISM]
+        C_EXG_1_bE7[1..N_Organs]            = C_EXG[1,i,Bound_E7]
+        C_EXG_1_b2E7[1..N_Organs]           = C_EXG[1,i,Bound2_E7]
+        C_EXG_1_bE6a[1..N_Organs]           = C_EXG[1,i,Bound_E6a]
+        C_EXG_1_b2E6a[1..N_Organs]          = C_EXG[1,i,Bound2_E6a]
+        C_EXG_1_bE7b[1..N_Organs]           = C_EXG[1,i,Bound_E7b]  
+        C_EXG_1_b2E7b[1..N_Organs]          = C_EXG[1,i,Bound2_E7b]
+		
+		Total_EXG_intra_Tissue[1..N_Organs] = ;;; The total mAb (free & bound) inside tissue (excludes those in vascular space)
+				  V_VM[i]*C_EXG[1,i,VM]
+				+ V_E7[i]*C_EXG[1,i,E7] + V_E6a[i]*C_EXG[1,i,E6a] + V_E7b[i]*C_EXG[1,i,E7b] 
+				+ V_ISM[i]*C_EXG[1,i,ISM] + V_IntS[i]*C_EXG[1,i,IntS] 
+				+ V_VM[i]*C_EXG[1,i,Bound_VM] + V_E7[i]*C_EXG[1,i,Bound_E7] + V_E6a[i]*C_EXG[1,i,Bound_E6a]
+				+ V_E7b[i]*C_EXG[1,i,Bound_E7b] + V_ISM[i]*C_EXG[1,i,Bound_ISM] 
+				+ V_VM[i]*C_EXG[1,i,Bound2_VM] + V_E7[i]*C_EXG[1,i,Bound2_E7] + V_E6a[i]*C_EXG[1,i,Bound2_E6a]
+				+ V_E7b[i]*C_EXG[1,i,Bound2_E7b] + V_ISM[i]*C_EXG[1,i,Bound2_ISM] 
+				+ V_VM[i]*C_EXG[1,i,Bound_VM_mem] + V_ISM[i]*C_EXG[1,i,Bound_ISM_mem] ;;;
+
+		mAb_Biodistr_Coeff_in_tissue[1..N_Organs] = (Total_EXG_intra_tissue[i]/V_Organ[i])/(1e-9 + C_EXG_Plasma) ; 
+
+      Total_FcRn[FcRn_VM] = ((ARRAYSUM(C_FcRn_VM[*])
+                                    + ARRAYSUM(C_EDG_bVM[*])         
+                                    + 2*ARRAYSUM(C_EDG_b2VM[*])     
+                                    + ARRAYSUM(C_EXG_1_bVM[*])      
+                                    + 2*ARRAYSUM(C_EXG_1_b2VM[*])    
+                                    )*ARRAYSUM(V_VM[*]))*1E3;;
+                                    
+      Total_FcRn[FcRn_E7] = ((ARRAYSUM(C_FcRn_E7[*])
+                                    + ARRAYSUM(C_EDG_bE7[*])        
+                                    + 2*ARRAYSUM(C_EDG_b2E7[*])       
+                                    + ARRAYSUM(C_EXG_1_bE7[*])      
+                                    + 2*ARRAYSUM(C_EXG_1_b2E7[*])   
+                                    )*ARRAYSUM(V_E7[*]))*1E3;;
+                                    
+      Total_FcRn[FcRn_E6a] = ((ARRAYSUM(C_FcRn_E6a[*])
+                                    + ARRAYSUM(C_EDG_bE6a[*])       
+                                    + 2*ARRAYSUM(C_EDG_b2E6a[*])    
+                                    + ARRAYSUM(C_EXG_1_bE6a[*])     
+                                    + 2*ARRAYSUM(C_EXG_1_b2E6a[*])  
+                                    )*ARRAYSUM(V_E6a[*]))*1E3;;
+                                    
+      Total_FcRn[FcRn_E7b] = ((ARRAYSUM(C_FcRn_E7b[*])
+                                    + ARRAYSUM(C_EDG_bE7b[*])       
+                                    + 2*ARRAYSUM(C_EDG_b2E7b[*])    
+                                    + ARRAYSUM(C_EXG_1_bE7b[*])     
+                                    + 2*ARRAYSUM(C_EXG_1_b2E7b[*])  
+                                    )*ARRAYSUM(V_E7b[*]))*1E3;;
+                                    
+      Total_FcRn[FcRn_ISM] = ((ARRAYSUM(C_FcRn_ISM[*])
+                                    + ARRAYSUM(C_EDG_bISM[*])       
+                                    + 2*ARRAYSUM(C_EDG_b2ISM[*])    
+                                    + ARRAYSUM(C_EXG_1_bISM[*])     
+                                    + 2*ARRAYSUM(C_EXG_1_b2ISM[*])  
+                                    )*ARRAYSUM(V_ISM[*]))*1E3;;                             
+
+      Total_FcRn_MB = ARRAYSUM(Total_FcRn[*]) 
+
+                                                                                                                                                                                                                                                                                                                                                                                        
+
