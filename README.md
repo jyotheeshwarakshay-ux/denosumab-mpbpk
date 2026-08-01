@@ -189,6 +189,21 @@ of using it.
 
 ---
 
+## Exploratory extension
+
+An exploratory extension (`R/09_bone_fcrn_rescue.R`) adds FcRn-mediated
+recycling to bone's sorting endosome as a proof-of-concept. It moves bone's
+ABC from 5.70% to 6.36% — toward the 7.27% benchmark — directionally
+supporting the hypothesis that the residual gap in the distribution-only
+model reflects the omitted FcRn/cellular mechanism. This is a mechanism
+demonstration only, not a calibrated prediction: it uses E6a-only single
+binding, drug only (no endogenous IgG competition), a bone-scoped FcRn pool,
+and an un-dosed model in which saturable binding makes the ABC
+dose-dependent. Full FcRn calibration (whole-body FcRn competition, dose
+scaling, endogenous IgG) is identified future work.
+
+---
+
 ## Reproducing
 
 Requires R with `rxode2`.
