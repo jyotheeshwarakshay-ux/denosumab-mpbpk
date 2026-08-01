@@ -1,9 +1,22 @@
 # 32-compartment rxode2 prototype: all 15 Shah & Betts tissues, extending
 # R/04_generic_14_tissues.R by adding LIVER with correct portal-vein
-# routing. This is the ONE new structural feature; the 10 "plain" generic
-# tissues (Lung, Heart, Muscle, Skin, Adipose, Bone, Brain, Kidney, Thymus,
-# Other) are untouched from file 04. Distribution skeleton ONLY - no FcRn,
-# no clearance/elimination anywhere.
+# routing. Distribution skeleton ONLY - no FcRn, no clearance/elimination
+# anywhere.
+#
+# Two changes relative to file 04, both verified against the source before
+# being made permanent:
+#
+#   1) LIVER portal-vein routing (the structural addition - see below).
+#   2) The 10 "plain" tissues' (Lung, Heart, Muscle, Skin, Adipose, Bone,
+#      Brain, Kidney, Thymus, Other) venous return to Central now uses
+#      (PLQ-LF) instead of the full-PLQ round trip file 04 used, matching
+#      the source's generic vascular equation exactly (source line 361).
+#      This was file 04's one known simplification; a throwaway A/B test
+#      (R/dev_test_plq_lf.R, now deleted) measured its effect on Bone's ABC
+#      before making it permanent: 5.690% (full-PLQ) vs 5.701% (PLQ-LF), a
+#      0.011 percentage-point / 0.2% relative difference - real, small, and
+#      mass-conserving either way. The corrected (PLQ-LF) version is what
+#      is implemented below.
 #
 # Portal routing (verified verbatim against source lines 375-387, 855-872):
 #
@@ -33,11 +46,12 @@
 #       Central at its own concentration). Central's credit for this flow
 #       is folded into the liver-return terms below, at C_LiverV.
 #
-#   Central plasma: for the 10 plain tissues, unchanged
-#   (-PLQ*C_central + PLQ*C_vasc). For Liver and the 4 gut organs, Central
-#   loses the usual arterial term (-PLQ*C_central) but its ONLY return
-#   credit from this group is the combined liver-outlet flow, all at
-#   C_LiverV:
+#   Central plasma: for the 10 plain tissues, arterial delivery is
+#   unchanged (-PLQ*C_central) but the return credit is now
+#   (+ (PLQ-LF)*C_vasc), matching the source exactly (see change 2 above).
+#   For Liver and the 4 gut organs, Central loses the usual arterial term
+#   (-PLQ*C_central) but its ONLY return credit from this group is the
+#   combined liver-outlet flow, all at C_LiverV:
 #     + (PLQ[Liver]-LF[Liver])  * C_LiverV
 #     + (PLQ[Spleen]-LF[Spleen])* C_LiverV
 #     + (PLQ[Pancreas]-LF[Pancreas]) * C_LiverV
@@ -67,7 +81,7 @@ generic_organs <- c("Lung", "Heart", "Muscle", "Skin", "Adipose", "Bone",
                      "Spleen", "Other")                    # same 14 as file 04
 
 gut_organs   <- c("Spleen", "Pancreas", "SI", "LI")         # portal-draining subset
-plain_organs <- setdiff(generic_organs, gut_organs)         # 10, fully unchanged from file 04
+plain_organs <- setdiff(generic_organs, gut_organs)         # 10; venous return now (PLQ-LF), see header
 
 all_organs <- c(generic_organs, "Liver")                    # all 15
 
@@ -124,7 +138,7 @@ central_terms <- character(0)
 
 for (o in plain_organs) {
   central_terms <- c(central_terms,
-    sprintf("- PLQ_%s * C_central + PLQ_%s * C_%sV", o, o, o))
+    sprintf("- PLQ_%s * C_central + (PLQ_%s - LF_%s) * C_%sV", o, o, o, o))
 }
 
 for (g in gut_organs) {
@@ -151,12 +165,12 @@ lines <- c(lines,
   sprintf("d/dt(LymphNode) <- %s - L_LymphNode * C_ln",
           paste(ln_terms, collapse = " ")))
 
-# --- Plain tissues (10): unchanged generic pattern from file 04 -----------
+# --- Plain tissues (10): venous return now (PLQ-LF), matching source ------
 
 for (o in plain_organs) {
   lines <- c(lines,
-    sprintf("d/dt(%sV)  <- PLQ_%s * C_central - PLQ_%s * C_%sV - LF_%s * (1 - sigmaV_%s) * C_%sV",
-            o, o, o, o, o, o, o),
+    sprintf("d/dt(%sV)  <- PLQ_%s * C_central - (PLQ_%s - LF_%s) * C_%sV - LF_%s * (1 - sigmaV_%s) * C_%sV",
+            o, o, o, o, o, o, o, o),
     sprintf("d/dt(%sIS) <- LF_%s * (1 - sigmaV_%s) * C_%sV - LF_%s * (1 - sigmaIS_%s) * C_%sIS",
             o, o, o, o, o, o, o)
   )
@@ -304,8 +318,10 @@ cat("Liver vascular balanced (rel. diff < 1e-6)?", liver_balanced, "\n\n")
 
 # ---------------------------------------------------------------------------
 # Check 4: interstitial:plasma ratio per tissue (all 15), sorted, at the
-# final timepoint. The 14 generic tissues should be unchanged from file 04;
-# Liver's ratio is new.
+# final timepoint. The 14 generic tissues will now show a small (~0.1%)
+# deviation from file 04's numbers, because the plain tissues' venous
+# return was corrected to (PLQ-LF) here (see header) - file 04 used full
+# PLQ for all 14. Liver's ratio is entirely new.
 # ---------------------------------------------------------------------------
 
 ratios <- sapply(all_organs, function(o) {
