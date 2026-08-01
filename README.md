@@ -1,6 +1,6 @@
 # denosumab-mpbpk
 
-**A from-source reconstruction (with two documented simplifications) of the Shah & Betts (2012) platform whole-body PBPK model for monoclonal antibodies, built up tissue-by-tissue and validated against a published bone biodistribution benchmark, ahead of application to denosumab.**
+**A from-source reconstruction (with one documented simplification) of the Shah & Betts (2012) platform whole-body PBPK model for monoclonal antibodies, built up tissue-by-tissue and validated against a published bone biodistribution benchmark, ahead of application to denosumab.**
 
 This repository transcribes and rebuilds the 15-tissue platform antibody PBPK
 model in `rxode2`, verifying each structural piece (mass conservation, shared
@@ -17,7 +17,7 @@ chain.
 A pure convective distribution skeleton — vascular and interstitial
 compartments only, **no FcRn, no cellular/endothelial compartment** — already
 reproduces Bone's antibody biodistribution coefficient (ABC) to within
-**1.28-fold of the published benchmark**: this model gives **5.69%**, against
+**1.28-fold of the published benchmark**: this model gives **5.70%**, against
 Shah & Betts' (2013) reported **7.27%**, comfortably inside the 2-fold accuracy
 band the source literature itself uses for cross-species validation.
 
@@ -147,23 +147,13 @@ Stated plainly, because knowing where a model stops being trustworthy is part
 of using it.
 
 1. **No FcRn, no cellular/endothelial compartment.** This is a pure
-   distribution skeleton. The 5.69% Bone ABC is *expected* to sit below the
+   distribution skeleton. The 5.70% Bone ABC is *expected* to sit below the
    7.27% benchmark for exactly this reason — the full source model's ABC
    includes antibody held in the endosomal/endothelial machinery that this
    model doesn't represent yet. The 1.28-fold gap is consistent with, not
    contrary to, that omission.
 
-2. **Simplified Central↔tissue round-trip for the 10 "plain" tissues.** These
-   use a full-`PLQ` round trip between Central and each tissue's vascular
-   compartment (both directions), rather than the source's exact `PLQ-LF`
-   venous return. This was a deliberate simplification from the very first
-   single-tissue prototype, proven still exactly mass-conserving, but it is
-   **not** a literal transcription of the source equation for those ten
-   tissues. Only Liver and the four gut organs use the source's exact
-   `PLQ-LF` formula, because that precision was required for the portal
-   routing to close.
-
-3. **Lung is treated as a generic tissue rather than a distinct arterial
+2. **Lung is treated as a generic tissue rather than a distinct arterial
    pass-through.** The source routes every tissue's arterial supply through
    a separate Lung vascular compartment (Central → Lung → tissues), whereas
    this model feeds tissues from central plasma directly. This
@@ -175,21 +165,21 @@ of using it.
    model's validation precision — and was retained deliberately rather than
    rebuilt.
 
-4. **The `PLQ[Other]` discrepancy is unresolved by design** (see
+3. **The `PLQ[Other]` discrepancy is unresolved by design** (see
    [Diagnostic highlights](#diagnostic-highlights)) — this model uses the
    source code's `9190` mL/h, not the paper's own Table S2 value of `5521`
    mL/h, and that conflict has not been adjudicated.
 
-5. **Single bolus, single steady-state timepoint.** No repeat dosing, no
+4. **Single bolus, single steady-state timepoint.** No repeat dosing, no
    time-course comparison against any clinical or preclinical denosumab
    concentration-time data. The 7.27% validation is a single equilibrium
    number, not a full PK profile match.
 
-6. **Human parameters only.** No mouse/rat/monkey cross-species validation
+5. **Human parameters only.** No mouse/rat/monkey cross-species validation
    has been performed here, despite that being a central feature of the
    original Shah & Betts (2012) paper.
 
-7. **Not yet coupled to `rankl-opg-qsp`.** See
+6. **Not yet coupled to `rankl-opg-qsp`.** See
    [The denosumab thread](#the-denosumab-thread) — the bone-tissue
    concentration this model can produce has no live connection to that
    project's RANKL-blockade term yet.
