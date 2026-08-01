@@ -1,6 +1,6 @@
 # denosumab-mpbpk
 
-**A from-source reproduction of the Shah & Betts (2012) platform whole-body PBPK model for monoclonal antibodies, built up tissue-by-tissue and validated against a published bone biodistribution benchmark, ahead of application to denosumab.**
+**A from-source reconstruction (with two documented simplifications) of the Shah & Betts (2012) platform whole-body PBPK model for monoclonal antibodies, built up tissue-by-tissue and validated against a published bone biodistribution benchmark, ahead of application to denosumab.**
 
 This repository transcribes and rebuilds the 15-tissue platform antibody PBPK
 model in `rxode2`, verifying each structural piece (mass conservation, shared
@@ -223,18 +223,15 @@ reproduces the full chain and prints every check along the way.
   based on the plasma concentrations in several preclinical species and
   human.* mAbs. 2013;5(2):297–305. Source of the 7.27% (CV 11.8%) bone ABC
   benchmark validated against in `R/06_bone_abc_validation.R`.
-- **Source code and parameter tables:** Jones HM, et al. (2019), CPT:
-  Pharmacometrics & Systems Pharmacology, supplementary files
+- **Source code and parameter tables:** Jones HM, Zhang Z, Jasper P, Luo H,
+  Avery LB, King LE, Neubert H, Barton HA, Betts AM, Webster R. *A
+  Physiologically-Based Pharmacokinetic Model for the Prediction of
+  Monoclonal Antibody Pharmacokinetics From In Vitro Data.* CPT
+  Pharmacometrics Syst Pharmacol. 2019;8(10):738–747. Supplementary files
   `PSP4-8-738-s001.pdf` (Tables S1–S3, PBPK model equations) and
-  `PSP4-8-738-s002.txt` (Berkeley Madonna implementation) in
-  `sources/`. All physiological parameters in `R/01_parameters.R` are
-  transcribed directly from these files, verified line-by-line against the
-  paper's own Table S2. *Full author list and exact citation not
-  independently re-verified from the primary paper in this repository — the
-  supplement PDF itself carries no title/author metadata (checked directly);
-  title and journal identified via literature search and cross-checked
-  against the supplement's own page numbering (`PSP4-8-738` = CPT:PSP, vol.
-  8, p. 738).*
+  `PSP4-8-738-s002.txt` (Berkeley Madonna implementation) in `sources/`. All
+  physiological parameters in `R/01_parameters.R` are transcribed directly
+  from these files, verified line-by-line against the paper's own Table S2.
 
 ## Related work
 
