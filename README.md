@@ -130,12 +130,15 @@ what was expected on the first try:
   genuinely inconsistent with its own published table. Documented in
   `R/01_parameters.R` rather than resolved either way.
 
-- **Portal-routing conservation was proven before being run.** Liver's portal
-  inflow uses `(PLQ-LF)` while the ten "plain" tissues use full `PLQ` for
-  their Central round-trip — an asymmetry that looked, on first read, like it
-  might leak mass. Term-by-term tracing showed every outflow is matched by an
-  identical inflow elsewhere in the system (the "missing" `LF*sigma_V`
-  fraction for gut organs reappears via their own lymph path, not the portal
+- **Portal-routing conservation was proven before being run.** Each gut
+  organ's vascular compartment drains through two separate paths from a
+  single `PLQ` arterial inflow: `(PLQ-LF)` to Liver's portal inflow, and
+  `LF*(1-sigma_V)` to its own interstitial space — a dual-drain structure
+  that looked, on first read, like it might leak mass. Term-by-term tracing
+  showed every outflow is matched by an identical inflow elsewhere in the
+  system (Liver's portal-inflow term exactly matches what each gut organ
+  loses to the portal path; the "missing" `LF*sigma_V` fraction is matched
+  separately by that organ's own interstitial gain, not by the portal
   path). The numerical result (`0` relative difference at steady state)
   confirmed the by-hand proof.
 
