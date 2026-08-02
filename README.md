@@ -208,7 +208,9 @@ that hypothesis: FcRn-mediated rescue in bone's sorting endosome (E6a) only,
 single-site binding, drug only, no endogenous IgG (EDG) competition. At a
 correctly-scaled whole-body FcRn pool, this mechanism moves Bone ABC by only
 **~0.16 percentage points** (5.70% → 5.86%, see point 3). The minimal FcRn
-mechanism does **not** explain the gap.
+mechanism does **not** explain the gap — though the full machinery (all
+endosomal compartments, multi-site binding, EDG competition), deliberately
+scoped down here, plausibly would.
 
 **3. A near-perfect match appeared, then was traced to an error, not
 progress.** `R/10_bone_fcrn_real_dose.R` — replacing the model's
