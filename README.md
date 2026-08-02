@@ -189,18 +189,56 @@ of using it.
 
 ---
 
-## Exploratory extension
+## Investigating the residual gap
 
-An exploratory extension (`R/09_bone_fcrn_rescue.R`) adds FcRn-mediated
-recycling to bone's sorting endosome as a proof-of-concept. It moves bone's
-ABC from 5.70% to 6.36% — toward the 7.27% benchmark — directionally
-supporting the hypothesis that the residual gap in the distribution-only
-model reflects the omitted FcRn/cellular mechanism. This is a mechanism
-demonstration only, not a calibrated prediction: it uses E6a-only single
-binding, drug only (no endogenous IgG competition), a bone-scoped FcRn pool,
-and an un-dosed model in which saturable binding makes the ABC
-dose-dependent. Full FcRn calibration (whole-body FcRn competition, dose
-scaling, endogenous IgG) is identified future work.
+**Everything in this section is exploratory and un-calibrated** — an
+investigation into *why* the validated distribution model (above) sits
+1.28-fold below the 7.27% benchmark, not a second validated result. The Key
+Finding's 5.70% remains the repository's sole validated claim; nothing below
+changes it.
+
+**1. The gap.** The distribution-only model (`R/06_bone_abc_validation.R`)
+gives Bone ABC = 5.70% against a 7.27% benchmark — a ~22% relative
+shortfall. The working hypothesis: the missing FcRn/cellular mechanism
+(omitted by design from the distribution skeleton) accounts for it.
+
+**2. A minimal FcRn rescue doesn't close the gap.** `R/07_fcrn_parameters.R`
+through `R/09_bone_fcrn_rescue.R` build the smallest testable version of
+that hypothesis: FcRn-mediated rescue in bone's sorting endosome (E6a) only,
+single-site binding, drug only, no endogenous IgG (EDG) competition. At a
+correctly-scaled whole-body FcRn pool, this mechanism moves Bone ABC by only
+**~0.16 percentage points** (5.70% → 5.86%, see point 3). The minimal FcRn
+mechanism does **not** explain the gap.
+
+**3. A near-perfect match appeared, then was traced to an error, not
+progress.** `R/10_bone_fcrn_real_dose.R` — replacing the model's
+dimensionless dose with a real 60 mg denosumab dose — produced a
+Bone ABC of 7.28%, startlingly close to the 7.27% benchmark. That match did
+**not** hold up: it was traced to an FcRn pool scoped to Bone's own
+endosomal volume alone, overstating local FcRn concentration by **6.77-fold**
+relative to a whole-body-shared pool. Correcting the scope
+(`R/11_bone_fcrn_shared_pool.R`) dropped Bone ABC to 5.86% — confirming the
+7.28% match was a compensating-error artifact, not validation of the
+mechanism.
+
+**4. The competing "missing volume" hypothesis was tested and ruled out.**
+`R/12_cellular_volume_diagnostic.R` asked a different question: could the
+gap simply be bone's missing bulk cellular compartment (7.817 L, over 4x its
+interstitial volume)? A bounding calculation — filling that volume at
+interstitial concentration (lower bound) and at plasma concentration (upper
+bound) — gave ABCs of **20.3%** and **82.8%**, both massively overshooting
+7.27%. Cellular volume is more than large enough; the real limiter is that
+intracellular antibody concentration is kinetically constrained
+(receptor/pinocytosis-driven uptake), not a matter of insufficient space.
+
+**Conclusion.** The residual gap is an **FcRn-kinetics problem, not a
+distribution or volume problem.** Closing it fully would require the
+complete FcRn machinery this investigation deliberately scoped down from:
+all five endosomal/membrane sub-compartments (not E6a alone), multi-site
+cooperative binding, endogenous IgG competition for the same FcRn pool, and
+degradation-linked FcRn turnover — plus dose-regimen (Q6-month) and
+subcutaneous-absorption realism, both still deferred. All identified as
+future work, not attempted here.
 
 ---
 
