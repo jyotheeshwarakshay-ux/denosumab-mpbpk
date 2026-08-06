@@ -279,11 +279,14 @@ reproduces the full chain and prints every check along the way.
   Avery LB, King LE, Neubert H, Barton HA, Betts AM, Webster R. *A
   Physiologically-Based Pharmacokinetic Model for the Prediction of
   Monoclonal Antibody Pharmacokinetics From In Vitro Data.* CPT
-  Pharmacometrics Syst Pharmacol. 2019;8(10):738–747. Supplementary files
-  `PSP4-8-738-s001.pdf` (Tables S1–S3, PBPK model equations) and
-  `PSP4-8-738-s002.txt` (Berkeley Madonna implementation) in `sources/`. All
-  physiological parameters in `R/01_parameters.R` are transcribed directly
-  from these files, verified line-by-line against the paper's own Table S2.
+  Pharmacometrics Syst Pharmacol. 2019;8(10):738–747.
+  doi:10.1002/psp4.12461 (open access). The physiological parameters,
+  reflection coefficients, and PBPK model equations transcribed into
+  `R/01_parameters.R` come from that paper's open-access supplementary
+  files (Tables S1–S3 and the reference Berkeley Madonna implementation),
+  available directly from the publisher at the DOI above — not
+  redistributed in this repository. All parameters were verified
+  line-by-line against the paper's own Table S2 before transcription.
 
 ## Related work
 
