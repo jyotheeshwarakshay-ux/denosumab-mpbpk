@@ -290,13 +290,16 @@ reproduces the full chain and prints every check along the way.
 
 ## Related work
 
-- **rankl-opg-qsp** — virtual-population QSP model of denosumab's effect on
-  bone remodeling; currently drives its RANKL-blockade term off plasma
-  concentration, a placeholder this repository's bone-compartment output
-  could eventually replace.
-- **denosumab-tmdd-qss** — the denosumab TMDD / QSS parameter-recovery and
-  identifiability study whose population PK model feeds `rankl-opg-qsp`
-  Stage 3; structurally distinct from the mechanistic PBPK approach here.
-- **tmdd-approximations** — TMDD model with QSS and Michaelis–Menten
-  approximations.
-- **Theophylline-popPK** — population-PK reproduction.
+- [rankl-opg-qsp](https://github.com/jyotheeshwarakshay-ux/rankl-opg-qsp) —
+  virtual-population QSP model of denosumab's effect on bone remodeling;
+  currently drives its RANKL-blockade term off plasma concentration, a
+  placeholder this repository's bone-compartment output could eventually
+  replace.
+- [denosumab-tmdd-qss](https://github.com/jyotheeshwarakshay-ux/denosumab-tmdd-qss) —
+  the denosumab TMDD / QSS parameter-recovery and identifiability study
+  whose population PK model feeds `rankl-opg-qsp` Stage 3; structurally
+  distinct from the mechanistic PBPK approach here.
+- [tmdd-approximations](https://github.com/jyotheeshwarakshay-ux/tmdd-approximations) —
+  TMDD model with QSS and Michaelis–Menten approximations.
+- [Theophylline-popPK](https://github.com/jyotheeshwarakshay-ux/Theophylline-popPK) —
+  population-PK reproduction.
