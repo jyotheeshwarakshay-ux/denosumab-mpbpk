@@ -6,9 +6,10 @@ This repository is the code base for **Paper 2** (direction locked 26 Nov 2026; 
 Reduce a whole-body denosumab PBPK–TMDD model to the clinical 2-compartment QSS-TMDD model, explain why Kss was fragile in Paper 1, then use PopED optimal design + simulation–estimation to find a sampling design that makes Kss estimable. Target journal: CPT:PSP (fallback JPKPD). Preprint by 30 June 2027.
 
 ## Stages
-- S1 (done, pending R confirmation): `R/13_whole_body_elimination.R` — linear elimination from plasma, CL = 3.06 mL/h (Sutjandra 2011). Expected: mass balance error < 1e-8, AUC·CL/dose = 1, terminal half-life ≈ 56.6 days.
-- S2: subcutaneous absorption via lymph (F = 64%, ka = 0.00883 /h, Sutjandra 2011) + RANKL binding. RANKL location and turnover must come from cited primary sources.
-- S3: compare with Sutjandra 2011 typical profiles at ≥3 doses.
+- S1 DONE (commit a5ba6fa): `R/13_whole_body_elimination.R` — linear plasma elimination, CL 3.06 mL/h (Sutjandra 2011); terminal half-life 56.6 days; Vss 5.865 L.
+- S2a DONE (commit 6825cf6): `R/14_sc_dosing_rankl_plasma.R` — SC (F 0.64, ka 0.00883 /h, Sutjandra 2011) + plasma RANKL QSS (Kss 1.56 nM, R0 15.23 nM, kint 0.022 /h, ksyn 0.01 nM/h, Choi 2025); half-life 24.1 days vs label 25.4.
+- S2b DONE (commit 8336af5): `R/15_rankl_in_bone.R` — same RANKL amount in bone interstitium; half-life 41.8 days; bone RANKL suppression delivery-limited (~92% of bone drug bound; bone total/plasma 0.02 vs 0.188 without target).
+- S3 DONE (verified in R, all 21 values match Python): `R/16_compare_clinical_model.R` — PBPK vs Choi 2025 2-cmt QSS-TMDD at 6/60/210 mg SC (Sutjandra full text unavailable). Python: mismatch has two causes — central volume (3.126 L vs 1.58 L apparent) at low dose, distribution volume (Vss 5.87 L) at high dose. Do not tune.
 - S4: reduction to 2-compartment QSS-TMDD; lumped parameters vs Sutjandra.
 - S5: PopED optimal sampling design for Kss.
 - S6: simulation–estimation in nlmixr2 (Kss bias, precision, fit success).
