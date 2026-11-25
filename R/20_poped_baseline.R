@@ -36,7 +36,7 @@
 #       KINT 2555.3, KSS 352.6, KSYN 43.3, R0 17.3; sigma prop 7.1, add 6.8
 #   Small differences with a different PopED version are possible; report
 #   them, do not tune.
-# CONFIRMED on Jyo's Mac with CRAN PopED 0.7.0 + deSolve 1.42 (26 Nov 2026):
+# CONFIRMED on the author's machine with CRAN PopED 0.7.0 + deSolve 1.42 (26 Nov 2026):
 # typical Ctot identical to 4 decimals; v2 KSS 78.9, v1 KSS 35.1;
 # d_KSS v2 722.7, v1 340.3; d_KINT v2 845.8, v1 2640.5.
 # REFERENCE FOR THE MANUSCRIPT = CRAN PopED 0.7.0 values.
