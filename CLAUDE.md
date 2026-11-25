@@ -10,7 +10,8 @@ Reduce a whole-body denosumab PBPK–TMDD model to the clinical 2-compartment QS
 - S2a DONE (commit 6825cf6): `R/14_sc_dosing_rankl_plasma.R` — SC (F 0.64, ka 0.00883 /h, Sutjandra 2011) + plasma RANKL QSS (Kss 1.56 nM, R0 15.23 nM, kint 0.022 /h, ksyn 0.01 nM/h, Choi 2025); half-life 24.1 days vs label 25.4.
 - S2b DONE (commit 8336af5): `R/15_rankl_in_bone.R` — same RANKL amount in bone interstitium; half-life 41.8 days; bone RANKL suppression delivery-limited (~92% of bone drug bound; bone total/plasma 0.02 vs 0.188 without target).
 - S3 DONE (verified in R, all 21 values match Python): `R/16_compare_clinical_model.R` — PBPK vs Choi 2025 2-cmt QSS-TMDD at 6/60/210 mg SC (Sutjandra full text unavailable). Python: mismatch has two causes — central volume (3.126 L vs 1.58 L apparent) at low dose, distribution volume (Vss 5.87 L) at high dose. Do not tune.
-- S4: reduction to 2-compartment QSS-TMDD; lumped parameters vs Sutjandra.
+- S4a DONE (commit 38c3f51): R/17_total_plasma_volume.R — central plasma 1.4121 L so total plasma = 3.126 L (Jones 2019 code adds 1.714 L organ vascular on top of 3.126 L; Chang et al. 2022 Table 1 totals 3.135 L). Vss 4.151 L; 60 mg SC Cmax 7.06 ug/mL (label 6.75), half-life 29.4 d (label 25.4), AUC0-16wk 374 (label 316); PBPK/Choi median ratio 0.20 / 1.08 / 1.20 at 6 / 60 / 210 mg. Sensitivity analysis, not a claim that Jones 2019 is wrong.
+- S4b NEXT: lumped 2- and 3-compartment models (central = fast; intermediate = skin/muscle/adipose/other; slow = bone), preserving Vss (Pilari & Huisinga 2010); RANKL QSS in the lumped central; compare FREE concentrations with the full PBPK; report the same RANKL-elimination day for all versions. Plan: paper2/step4-lumping-notes.md in the claude.ai project.
 - S5: PopED optimal sampling design for Kss.
 - S6: simulation–estimation in nlmixr2 (Kss bias, precision, fit success).
 
