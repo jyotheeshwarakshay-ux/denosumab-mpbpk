@@ -14,8 +14,8 @@
 #     D_M3 : design D, BLQ kept as censored (M3)       - primary
 #     D_M1 : design D, BLQ dropped (M1, as Choi 2025)  - size of the BLQ-drop bias
 #   (Design A has ~0.2% BLQ, so A_M1 would equal A_M3 and is not run.)
-#   Jobs are ordered replicate by replicate, so stopping early still leaves a
-#   balanced set. Each finished fit is saved at once to
+#   Jobs run in replicate order because parLapplyLB uses chunk.size = 1, so
+#   stopping early still leaves a balanced set. Each finished fit is saved at once to
 #   results/step6b/<job>_rep<NNN>.rds; re-running SKIPS finished fits
 #   (safe to stop and restart at any time).
 #
@@ -30,7 +30,7 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 N_REP     <- if (length(args) >= 1) as.integer(args[1]) else 50
-N_WORKERS <- if (length(args) >= 2) as.integer(args[2]) else 4
+N_WORKERS <- if (length(args) >= 2) as.integer(args[2]) else 3
 
 suppressMessages(library(parallel))
 out_dir <- "results/step6b"
@@ -92,7 +92,7 @@ cl <- makeCluster(N_WORKERS)
 clusterCall(cl, setwd, getwd())
 clusterExport(cl, c("setup_code", "todo", "out_dir"))
 invisible(clusterEvalQ(cl, setup_code()))   # each worker: R/23 setup incl. CHECK 0 and data checks
-msgs <- parLapplyLB(cl, seq_len(nrow(todo)), run_job)
+msgs <- parLapplyLB(cl, seq_len(nrow(todo)), run_job, chunk.size = 1)
 stopCluster(cl)
 
 cat(unlist(msgs), sep = "\n")
